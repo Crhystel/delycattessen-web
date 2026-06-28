@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  /* Tipografia */
+  --font-display: "Sora", "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Marca: naranja (energia, comida) */
+  --color-brand-50:  #FFF3E9;
+  --color-brand-100: #FFE4CC;
+  --color-brand-200: #FFC899;
+  --color-brand-400: #FF8A33;
+  --color-brand-500: #FF6E00;
+  --color-brand-600: #D85B00;
+  --color-brand-700: #A84600;
+
+  /* Acento: teal (tecnologia, confianza) */
+  --color-teal-50:  #EAF6FA;
+  --color-teal-100: #CFEDF5;
+  --color-teal-200: #9FDAEB;
+  --color-teal-400: #2496BC;
+  --color-teal-500: #0F7FA4;
+  --color-teal-600: #0B5F7A;
+  --color-teal-700: #08475C;
+
+  /* Tinta / neutros (con sesgo frio, derivados del teal) */
+  --color-ink-900: #0C2027;
+  --color-ink-700: #243B43;
+  --color-ink-500: #5A7077;
+  --color-ink-300: #9FB1B5;
+  --color-ink-100: #E4EBED;
+  --color-ink-50:  #F4F8F9;
+
+  /* Semanticos */
+  --color-success-50:  #E8F6EE;
+  --color-success-500: #1E9E6B;
+  --color-success-600: #167A52;
+  --color-danger-50:   #FBEAE8;
+  --color-danger-500:  #E0473E;
+  --color-danger-600:  #B5352D;
+  --color-warning-50:  #FDF3E1;
+  --color-warning-500: #E8A33D;
+  --color-warning-600: #B9802A;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-ink-50);
+  color: var(--color-ink-900);
+}
+
+/* Scrollbar discreto para paneles internos */
+.scroll-soft::-webkit-scrollbar { width: 6px; height: 6px; }
+.scroll-soft::-webkit-scrollbar-thumb { background: var(--color-ink-200, #d8e2e4); border-radius: 999px; }
+.scroll-soft::-webkit-scrollbar-track { background: transparent; }
