@@ -5,31 +5,40 @@
   --font-display: "Sora", "Inter", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
 
-  /* Marca: naranja (energia, comida) */
-  --color-brand-50:  #FFF3E9;
-  --color-brand-100: #FFE4CC;
-  --color-brand-200: #FFC899;
-  --color-brand-400: #FF8A33;
-  --color-brand-500: #FF6E00;
-  --color-brand-600: #D85B00;
-  --color-brand-700: #A84600;
+  /* Primario A: amarillo (energia, identidad de marca) */
+  --color-brand-50:  #FEF8EC;
+  --color-brand-100: #FEF0D3;
+  --color-brand-200: #FDE0A7;
+  --color-brand-400: #F7C876;
+  --color-brand-500: #F5B551;
+  --color-brand-600: #D4943A;
+  --color-brand-700: #A87028;
 
-  /* Acento: teal (tecnologia, confianza) */
-  --color-teal-50:  #EAF6FA;
-  --color-teal-100: #CFEDF5;
-  --color-teal-200: #9FDAEB;
-  --color-teal-400: #2496BC;
-  --color-teal-500: #0F7FA4;
-  --color-teal-600: #0B5F7A;
-  --color-teal-700: #08475C;
+  /* Primario B: azul caribe (tecnologia, confianza, navegacion) */
+  --color-teal-50:  #E5F3FF;
+  --color-teal-100: #CCE7FF;
+  --color-teal-200: #99CFFF;
+  --color-teal-400: #33AEFF;
+  --color-teal-500: #0099FF;
+  --color-teal-600: #007ACC;
+  --color-teal-700: #005C99;
 
-  /* Tinta / neutros (con sesgo frio, derivados del teal) */
-  --color-ink-900: #0C2027;
-  --color-ink-700: #243B43;
-  --color-ink-500: #5A7077;
-  --color-ink-300: #9FB1B5;
-  --color-ink-100: #E4EBED;
-  --color-ink-50:  #F4F8F9;
+  /* Secundario: morado */
+  --color-secondary-50:  #F0EBFB;
+  --color-secondary-100: #E0D5F7;
+  --color-secondary-200: #C2ABEF;
+  --color-secondary-400: #8A5DD1;
+  --color-secondary-500: #6F42C9;
+  --color-secondary-600: #5831A3;
+  --color-secondary-700: #42257D;
+
+  /* Tinta / neutros */
+  --color-ink-900: #0C1B2A;
+  --color-ink-700: #1E3347;
+  --color-ink-500: #4D6880;
+  --color-ink-300: #9AB0C4;
+  --color-ink-100: #DDE8F0;
+  --color-ink-50:  #F2F7FB;
 
   /* Semanticos */
   --color-success-50:  #E8F6EE;

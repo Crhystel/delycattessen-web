@@ -1,59 +1,43 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChefHat, ShieldCheck, ScanFace, LayoutDashboard } from "lucide-react";
+import { ChefHat } from "lucide-react";
 import Button from "../components/ui/Button";
-import { Field, Input, Select } from "../components/ui/Field";
-import { instituciones } from "../data/mockData";
-
-const roles = [
-  {
-    id: "admin",
-    label: "Administrador",
-    desc: "Catálogo, menús, inventario y analítica",
-    icon: LayoutDashboard,
-    to: "/admin/dashboard",
-  },
-  {
-    id: "pos",
-    label: "Personal Operativo",
-    desc: "Punto de venta y despacho",
-    icon: ScanFace,
-    to: "/pos/identificacion",
-  },
-];
+import { Field, Input } from "../components/ui/Field";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("admin");
 
   function handleSubmit(e) {
     e.preventDefault();
-    const target = roles.find((r) => r.id === role)?.to || "/admin/dashboard";
-    navigate(target);
+    navigate("/admin/dashboard");
   }
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Panel de marca */}
       <div className="hidden lg:flex flex-col justify-between bg-teal-700 text-white p-12 relative overflow-hidden">
-        <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-white/5" />
-        <div className="absolute -left-10 bottom-10 w-64 h-64 rounded-full bg-brand-500/10" />
+        {/* Círculos decorativos */}
+        <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-white/5" />
+        <div className="absolute right-16 top-16 w-40 h-40 rounded-full bg-brand-500/20" />
+        <div className="absolute -left-16 bottom-24 w-72 h-72 rounded-full bg-secondary-500/15" />
+        <div className="absolute left-24 bottom-8 w-32 h-32 rounded-full bg-brand-500/10" />
+        <div className="absolute right-8 bottom-40 w-20 h-20 rounded-full bg-white/8" />
+        <div className="absolute left-1/2 top-1/3 w-56 h-56 rounded-full bg-teal-600/30" />
+        <div className="absolute -right-8 bottom-10 w-48 h-48 rounded-full bg-secondary-500/10" />
 
         <div className="flex items-center gap-3 relative z-10">
           <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center">
-            <ChefHat size={22} strokeWidth={2.4} />
+            <ChefHat size={22} strokeWidth={2.4} className="text-ink-900" />
           </div>
           <span className="font-display font-bold text-xl">D'Elycattessen</span>
         </div>
 
         <div className="relative z-10 max-w-md">
           <h1 className="font-display font-bold text-4xl leading-tight">
-            Gestión alimentaria escolar, sin filas ni cuadernos.
+            Administra la alimentación escolar de forma simple y segura.
           </h1>
           <p className="text-teal-100/80 mt-4 text-[15px] leading-relaxed">
-            Billetera digital, identificación ágil en el punto de venta y
-            analítica de ventas en una sola plataforma para Martim Cereré y El
-            Sauce School.
+            Gestiona pagos, identifica estudiantes al instante y consulta
+            información en tiempo real desde una sola plataforma.
           </p>
         </div>
       </div>
@@ -63,7 +47,7 @@ export default function Login() {
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <div className="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center">
-              <ChefHat size={18} strokeWidth={2.4} className="text-white" />
+              <ChefHat size={18} strokeWidth={2.4} className="text-ink-900" />
             </div>
             <span className="font-display font-bold text-lg text-ink-900">
               D'Elycattessen
@@ -74,47 +58,10 @@ export default function Login() {
             Bienvenida de nuevo
           </h2>
           <p className="text-sm text-ink-500 mt-1.5 mb-6">
-            Prototipo de alta fidelidad · selecciona un perfil para explorar el
-            flujo.
+            Ingresa tus credenciales de administrador para acceder al panel.
           </p>
 
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {roles.map(({ id, label, desc, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setRole(id)}
-                className={`text-left rounded-xl border p-3.5 transition-colors ${
-                  role === id
-                    ? "border-brand-500 bg-brand-50/60 ring-1 ring-brand-500"
-                    : "border-ink-100 hover:bg-ink-50"
-                }`}
-              >
-                <Icon
-                  size={18}
-                  className={role === id ? "text-brand-600" : "text-ink-500"}
-                />
-                <p className="text-sm font-semibold text-ink-900 mt-2 leading-tight">
-                  {label}
-                </p>
-                <p className="text-xs text-ink-500 mt-0.5 leading-snug">
-                  {desc}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          <Field label="Institución">
-            <Select defaultValue={instituciones[0].id}>
-              {instituciones.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.nombre}
-                </option>
-              ))}
-            </Select>
-          </Field>
-
-          <Field label="Correo institucional">
+          <Field label="Correo">
             <Input
               type="email"
               placeholder="nombre@delycattessen.com"
@@ -130,13 +77,19 @@ export default function Login() {
             />
           </Field>
 
+          <div className="flex justify-end -mt-3 mb-4">
+            <button
+              type="button"
+              className="text-xs font-medium text-teal-600 hover:text-teal-700"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
+
           <Button type="submit" className="w-full mt-2" size="lg">
             Iniciar sesión
           </Button>
 
-          <p className="text-xs text-ink-300 text-center mt-5">
-            Prototipo funcional sin conexión a datos reales — solo navegación.
-          </p>
         </form>
       </div>
     </div>

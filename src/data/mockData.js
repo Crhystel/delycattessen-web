@@ -9,10 +9,44 @@ export const instituciones = [
 
 export const categorias = ['Bar', 'Almuerzo', 'Snacks', 'Bebidas', 'Postres']
 
+// Catálogo maestro de ingredientes: nombre único y estandarizado que se
+// sincroniza por API con el sistema de validación de alérgenos. Los
+// productos solo deben referenciar ingredientes de esta lista.
+export const catalogoIngredientes = [
+  'Aderezo César',
+  'Agua',
+  'Arroz',
+  'Avena',
+  'Azúcar',
+  'Carne asada',
+  'Chocolate',
+  'Crutones',
+  'Ensalada',
+  'Fruta picada',
+  'Harina',
+  'Huevo',
+  'Lechuga',
+  'Mantequilla',
+  'Mayonesa',
+  'Menestra',
+  'Miel',
+  'Mora',
+  'Nueces',
+  'Pan integral',
+  'Pasas',
+  'Patacón',
+  'Pollo',
+  'Pollo a la plancha',
+  'Queso parmesano',
+  'Tomate',
+  'Yogurt natural',
+]
+
 export const productos = [
   {
     id: 'p1',
     nombre: 'Sandwich de Pollo',
+    descripcion: 'Sandwich en pan integral con pollo a la plancha, lechuga y tomate.',
     categoria: 'Bar',
     precio: 2.5,
     stock: 18,
@@ -24,6 +58,7 @@ export const productos = [
   {
     id: 'p2',
     nombre: 'Ensalada César',
+    descripcion: 'Ensalada fresca con pollo, queso parmesano, crutones y aderezo César.',
     categoria: 'Almuerzo',
     precio: 3.2,
     stock: 12,
@@ -35,6 +70,7 @@ export const productos = [
   {
     id: 'p3',
     nombre: 'Jugo Natural de Mora',
+    descripcion: 'Jugo natural de mora preparado en el momento, sin conservantes.',
     categoria: 'Bebidas',
     precio: 1.0,
     stock: 30,
@@ -46,6 +82,7 @@ export const productos = [
   {
     id: 'p4',
     nombre: 'Brownie de Chocolate',
+    descripcion: 'Brownie artesanal de chocolate con nueces.',
     categoria: 'Postres',
     precio: 1.5,
     stock: 0,
@@ -57,6 +94,7 @@ export const productos = [
   {
     id: 'p5',
     nombre: 'Granola con Yogurt',
+    descripcion: 'Yogurt natural con granola casera, miel y fruta picada.',
     categoria: 'Snacks',
     precio: 1.8,
     stock: 22,
@@ -68,6 +106,7 @@ export const productos = [
   {
     id: 'p6',
     nombre: 'Almuerzo Ejecutivo',
+    descripcion: 'Menú completo con arroz, carne asada, menestra, ensalada y patacón.',
     categoria: 'Almuerzo',
     precio: 3.5,
     stock: 9,
@@ -79,6 +118,7 @@ export const productos = [
   {
     id: 'p7',
     nombre: 'Agua Embotellada',
+    descripcion: 'Agua embotellada 500ml.',
     categoria: 'Bebidas',
     precio: 0.6,
     stock: 45,
@@ -90,6 +130,7 @@ export const productos = [
   {
     id: 'p8',
     nombre: 'Galletas de Avena',
+    descripcion: 'Galletas caseras de avena con pasas.',
     categoria: 'Snacks',
     precio: 0.9,
     stock: 4,
@@ -100,43 +141,69 @@ export const productos = [
   },
 ]
 
-export const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+// Planificacion de menus mensuales: cada dia habil (lunes a viernes) del mes
+// tiene su propio menu independiente. Se identifica por fecha (YYYY-MM-DD).
+export const menuMensual = [
+  {
+    id: 'mm1',
+    mes: 'Junio 2026',
+    anio: 2026,
+    mesIndex: 5,
+    estado: 'Publicado',
+    fechaPublicacion: '2026-05-28',
+    dias: {
+      '2026-06-01': ['p6', 'p3'],
+      '2026-06-02': ['p2', 'p7'],
+      '2026-06-03': ['p6', 'p3'],
+      '2026-06-04': ['p1', 'p7'],
+      '2026-06-05': ['p2', 'p3'],
+      '2026-06-08': ['p6', 'p3'],
+      '2026-06-09': ['p2', 'p7'],
+    },
+  },
+  {
+    id: 'mm2',
+    mes: 'Julio 2026',
+    anio: 2026,
+    mesIndex: 6,
+    estado: 'Borrador',
+    fechaPublicacion: null,
+    dias: {
+      '2026-07-01': ['p1', 'p3'],
+    },
+  },
+]
 
-export const menuSemanal = {
-  Lunes: ['p6', 'p3'],
-  Martes: ['p2', 'p7'],
-  Miércoles: ['p6', 'p3'],
-  Jueves: ['p1', 'p7'],
-  Viernes: ['p2', 'p3'],
-}
-
+// Promociones (RF-08): una promoción puede cubrir uno o varios productos
+// (incluso todo el catálogo), pero un mismo producto no puede estar en más
+// de una promoción activa a la vez. El estado (Activa/Vencida) se calcula
+// automáticamente a partir de la fecha de vigencia, no se almacena — al
+// vencer, el precio original se restaura sin intervención manual y el
+// producto vuelve a quedar disponible para una nueva promoción.
 export const promociones = [
   {
     id: 'pr1',
-    titulo: 'Combo Bar 15% off',
-    descripcion: 'Sandwich + Jugo Natural con descuento durante la primera semana del mes.',
+    productos: ['p1', 'p3'],
+    imagen: '🥪',
     descuento: 15,
-    vigenciaInicio: '2026-06-01',
-    vigenciaFin: '2026-06-30',
-    estado: 'Activa',
+    vigenciaInicio: '2026-07-01',
+    vigenciaFin: '2026-07-15',
   },
   {
     id: 'pr2',
-    titulo: 'Snack Saludable',
-    descripcion: 'Granola con Yogurt a precio especial para fomentar consumo balanceado.',
+    productos: ['p5'],
+    imagen: '🥣',
     descuento: 10,
     vigenciaInicio: '2026-06-10',
     vigenciaFin: '2026-06-20',
-    estado: 'Activa',
   },
   {
     id: 'pr3',
-    titulo: 'Bienvenida Postres',
-    descripcion: 'Brownie de chocolate con descuento de lanzamiento.',
+    productos: ['p4'],
+    imagen: '🍫',
     descuento: 20,
     vigenciaInicio: '2026-05-01',
     vigenciaFin: '2026-05-15',
-    estado: 'Vencida',
   },
 ]
 
@@ -146,90 +213,91 @@ export const mermas = [
   { id: 'm3', producto: 'Galletas de Avena', cantidad: 2, motivo: 'Humedad', fecha: '2026-06-12' },
 ]
 
-// Usuarios simulados para la pantalla de identificacion del POS
-export const usuariosPOS = [
-  {
-    id: 'u1',
-    tipo: 'Estudiante',
-    nombre: 'Mateo Salazar',
-    institucion: 'Martim Cereré',
-    foto: '🧒',
-    saldo: 8.4,
-    alergenos: ['Lácteos'],
-    controlParental: { limiteDiario: 3.0, diasHabilitados: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] },
-    gastoHoy: 1.5,
-    preorden: null,
+// Ventas del dashboard de analítica (RF-07), desglosadas por institución/sede.
+export const ventasPorInstitucion = {
+  mc: {
+    kpis: { ingresosHoy: 130.0, ingresosSemana: 520.0, transaccionesHoy: 114 },
+    diario: [
+      { dia: 'Lun', fecha: '2026-06-29', digital: 59, efectivo: 26 },
+      { dia: 'Mar', fecha: '2026-06-30', digital: 69, efectivo: 32 },
+      { dia: 'Mié', fecha: '2026-07-01', digital: 61, efectivo: 32 },
+      { dia: 'Jue', fecha: '2026-07-02', digital: 78, efectivo: 36 },
+      { dia: 'Vie', fecha: '2026-07-03', digital: 89, efectivo: 38 },
+    ],
+    semanal: [
+      { semana: 'Sem 1', rango: '1 – 7 jun', digital: 299, efectivo: 133 },
+      { semana: 'Sem 2', rango: '8 – 14 jun', digital: 347, efectivo: 160 },
+      { semana: 'Sem 3', rango: '15 – 21 jun', digital: 283, efectivo: 131 },
+      { semana: 'Sem 4', rango: '22 – 28 jun', digital: 359, efectivo: 161 },
+    ],
+    mensual: [
+      { mes: 'Ene', anio: 2026, digital: 1092, efectivo: 486 },
+      { mes: 'Feb', anio: 2026, digital: 1167, efectivo: 519 },
+      { mes: 'Mar', anio: 2026, digital: 1206, efectivo: 534 },
+      { mes: 'Abr', anio: 2026, digital: 1128, efectivo: 507 },
+      { mes: 'May', anio: 2026, digital: 1284, efectivo: 552 },
+      { mes: 'Jun', anio: 2026, digital: 1288, efectivo: 585 },
+    ],
+    ranking: [
+      { nombre: 'Sandwich de Pollo', unidades: 85 },
+      { nombre: 'Jugo Natural de Mora', unidades: 77 },
+      { nombre: 'Almuerzo Ejecutivo', unidades: 58 },
+      { nombre: 'Granola con Yogurt', unidades: 49 },
+      { nombre: 'Agua Embotellada', unidades: 46 },
+    ],
   },
-  {
-    id: 'u2',
-    tipo: 'Estudiante',
-    nombre: 'Valentina Rojas',
-    institucion: 'El Sauce School',
-    foto: '👧',
-    saldo: 2.1,
-    alergenos: ['Gluten', 'Huevo'],
-    controlParental: { limiteDiario: 2.5, diasHabilitados: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'] },
-    gastoHoy: 0,
-    preorden: { producto: 'Almuerzo Ejecutivo', estado: 'Pendiente de entrega' },
+  es: {
+    kpis: { ingresosHoy: 81.4, ingresosSemana: 346.0, transaccionesHoy: 70 },
+    diario: [
+      { dia: 'Lun', fecha: '2026-06-29', digital: 39, efectivo: 18 },
+      { dia: 'Mar', fecha: '2026-06-30', digital: 46, efectivo: 21 },
+      { dia: 'Mié', fecha: '2026-07-01', digital: 41, efectivo: 21 },
+      { dia: 'Jue', fecha: '2026-07-02', digital: 52, efectivo: 24 },
+      { dia: 'Vie', fecha: '2026-07-03', digital: 59, efectivo: 25 },
+    ],
+    semanal: [
+      { semana: 'Sem 1', rango: '1 – 7 jun', digital: 199, efectivo: 89 },
+      { semana: 'Sem 2', rango: '8 – 14 jun', digital: 232, efectivo: 106 },
+      { semana: 'Sem 3', rango: '15 – 21 jun', digital: 188, efectivo: 88 },
+      { semana: 'Sem 4', rango: '22 – 28 jun', digital: 239, efectivo: 107 },
+    ],
+    mensual: [
+      { mes: 'Ene', anio: 2026, digital: 728, efectivo: 324 },
+      { mes: 'Feb', anio: 2026, digital: 778, efectivo: 346 },
+      { mes: 'Mar', anio: 2026, digital: 804, efectivo: 356 },
+      { mes: 'Abr', anio: 2026, digital: 752, efectivo: 338 },
+      { mes: 'May', anio: 2026, digital: 856, efectivo: 368 },
+      { mes: 'Jun', anio: 2026, digital: 858, efectivo: 390 },
+    ],
+    ranking: [
+      { nombre: 'Sandwich de Pollo', unidades: 57 },
+      { nombre: 'Jugo Natural de Mora', unidades: 51 },
+      { nombre: 'Almuerzo Ejecutivo', unidades: 39 },
+      { nombre: 'Granola con Yogurt', unidades: 32 },
+      { nombre: 'Agua Embotellada', unidades: 30 },
+    ],
   },
-  {
-    id: 'u3',
-    tipo: 'Estudiante',
-    nombre: 'Joaquín Pérez',
-    institucion: 'Martim Cereré',
-    foto: '🧒',
-    saldo: 0.8,
-    alergenos: [],
-    controlParental: { limiteDiario: 1.5, diasHabilitados: ['Lunes', 'Miércoles', 'Viernes'] },
-    gastoHoy: 1.5,
-    preorden: null,
-  },
-  {
-    id: 'u4',
-    tipo: 'Docente',
-    nombre: 'Lic. Andrea Maldonado',
-    institucion: 'Martim Cereré',
-    foto: '👩‍🏫',
-    saldo: null,
-    alergenos: ['Frutos secos'],
-    controlParental: null,
-    gastoHoy: 3.2,
-    preorden: null,
-    modalidad: 'Crédito',
-  },
-]
-
-// Resumen para el dashboard de analitica (RF-07)
-export const ventasDiarias = [
-  { dia: 'Lun', ingresos: 142 },
-  { dia: 'Mar', ingresos: 168 },
-  { dia: 'Mié', ingresos: 155 },
-  { dia: 'Jue', ingresos: 190 },
-  { dia: 'Vie', ingresos: 211 },
-]
-
-export const ventasSemanales = [
-  { semana: 'Sem 1', ingresos: 720 },
-  { semana: 'Sem 2', ingresos: 845 },
-  { semana: 'Sem 3', ingresos: 690 },
-  { semana: 'Sem 4', ingresos: 866 },
-]
-
-export const rankingProductos = [
-  { nombre: 'Sandwich de Pollo', unidades: 142 },
-  { nombre: 'Jugo Natural de Mora', unidades: 128 },
-  { nombre: 'Almuerzo Ejecutivo', unidades: 97 },
-  { nombre: 'Granola con Yogurt', unidades: 81 },
-  { nombre: 'Agua Embotellada', unidades: 76 },
-]
-
-export const kpisDashboard = {
-  ingresosHoy: 211.4,
-  ingresosSemana: 866.0,
-  transaccionesHoy: 184,
-  productoTop: 'Sandwich de Pollo',
-  ticketPromedio: 1.49,
 }
+
+// Usuarios: padres, usuarios de credito, personal operativo
+export const padres = [
+  { id: 'pa1', nombre: 'Roberto Salazar', correo: 'rsalazar@gmail.com', telefono: '0991234567', estado: 'Activo', hijos: ['Mateo Salazar'] },
+  { id: 'pa2', nombre: 'Carmen Rojas', correo: 'crojas@gmail.com', telefono: '0987654321', estado: 'Activo', hijos: ['Valentina Rojas'] },
+  { id: 'pa3', nombre: 'Luis Pérez', correo: 'lperez@gmail.com', telefono: '0976543210', estado: 'Inactivo', hijos: ['Joaquín Pérez'] },
+]
+
+export const usuariosCredito = [
+  { id: 'uc1', nombre: 'Lic. Andrea Maldonado', correo: 'amaldonado@martimcerere.edu.ec', estado: 'Activo', montoAcumulado: 38.6, institucion: 'Martim Cereré', contrasena: 'Fh6nR2wZ' },
+  { id: 'uc2', nombre: 'Ing. Pablo Cárdenas', correo: 'pcardenas@elsauce.edu.ec', estado: 'Activo', montoAcumulado: 24.1, institucion: 'El Sauce School', contrasena: 'Qm9dX4tK' },
+  { id: 'uc3', nombre: 'Lic. María Fernanda Ortiz', correo: 'mfortiz@martimcerere.edu.ec', estado: 'Activo', montoAcumulado: 45.9, institucion: 'Martim Cereré', contrasena: 'Vc2gL7pY' },
+  { id: 'uc4', nombre: 'Lic. Diego Sánchez', correo: 'dsanchez@elsauce.edu.ec', estado: 'Inactivo', montoAcumulado: 16.4, institucion: 'El Sauce School', contrasena: 'Jr5wB8mN' },
+]
+
+export const personalOperativo = [
+  { id: 'po1', nombre: 'Carlos Mendoza', correo: 'cmendoza@delycattessen.com', sede: 'Martim Cereré', estado: 'Activo', contrasena: 'Kx7mQ2pR' },
+  { id: 'po2', nombre: 'Sofía Vargas', correo: 'svargas@delycattessen.com', sede: 'El Sauce School', estado: 'Activo', contrasena: 'Th4jY9nW' },
+  { id: 'po3', nombre: 'Raúl Torres', correo: 'rtorres@delycattessen.com', sede: 'Martim Cereré', estado: 'Inactivo', contrasena: 'Bp3sV8cL' },
+]
 
 // Consumo a credito del personal docente (RF-06 / RF-07)
 export const consumoDocentes = [
