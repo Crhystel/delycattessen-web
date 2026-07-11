@@ -141,8 +141,53 @@ export const productos = [
   },
 ]
 
+// Platillos del Menu Mensual: entidad separada del Catalogo de Productos
+// (productos). Se preparan bajo demanda segun el conteo de preordenes de
+// cada dia, no bajo un inventario fijo, por lo que no tienen campo de stock.
+// Los ingredientes son obligatorios para poder validar alergenos.
+export const platillosMenu = [
+  {
+    id: 'pl1',
+    nombre: 'Almuerzo Ejecutivo',
+    descripcion: 'Menú completo con arroz, carne asada, menestra, ensalada y patacón.',
+    imagen: '🍽️',
+    ingredientes: ['Arroz', 'Carne asada', 'Menestra', 'Ensalada', 'Patacón'],
+  },
+  {
+    id: 'pl2',
+    nombre: 'Ensalada César',
+    descripcion: 'Ensalada fresca con pollo, queso parmesano, crutones y aderezo César.',
+    imagen: '🥗',
+    ingredientes: ['Lechuga', 'Pollo', 'Queso parmesano', 'Crutones', 'Aderezo César'],
+  },
+  {
+    id: 'pl3',
+    nombre: 'Jugo Natural de Mora',
+    descripcion: 'Jugo natural de mora preparado en el momento, sin conservantes.',
+    imagen: '🥤',
+    ingredientes: ['Mora', 'Agua', 'Azúcar'],
+  },
+  {
+    id: 'pl4',
+    nombre: 'Sandwich de Pollo',
+    descripcion: 'Sandwich en pan integral con pollo a la plancha, lechuga y tomate.',
+    imagen: '🥪',
+    ingredientes: ['Pan integral', 'Pollo a la plancha', 'Lechuga', 'Tomate', 'Mayonesa'],
+  },
+  {
+    id: 'pl5',
+    nombre: 'Agua Embotellada',
+    descripcion: 'Agua embotellada 500ml.',
+    imagen: '💧',
+    ingredientes: ['Agua'],
+  },
+]
+
 // Planificacion de menus mensuales: cada dia habil (lunes a viernes) del mes
 // tiene su propio menu independiente. Se identifica por fecha (YYYY-MM-DD).
+// "dias" asigna platillos (platillosMenu) a cada fecha, y "preordenes" lleva
+// el conteo de preordenes recibidas para cada fecha (RF: al preparse bajo
+// demanda, este conteo es lo que define cuanto se produce ese dia).
 export const menuMensual = [
   {
     id: 'mm1',
@@ -152,13 +197,22 @@ export const menuMensual = [
     estado: 'Publicado',
     fechaPublicacion: '2026-05-28',
     dias: {
-      '2026-06-01': ['p6', 'p3'],
-      '2026-06-02': ['p2', 'p7'],
-      '2026-06-03': ['p6', 'p3'],
-      '2026-06-04': ['p1', 'p7'],
-      '2026-06-05': ['p2', 'p3'],
-      '2026-06-08': ['p6', 'p3'],
-      '2026-06-09': ['p2', 'p7'],
+      '2026-06-01': ['pl1', 'pl3'],
+      '2026-06-02': ['pl2', 'pl5'],
+      '2026-06-03': ['pl1', 'pl3'],
+      '2026-06-04': ['pl4', 'pl5'],
+      '2026-06-05': ['pl2', 'pl3'],
+      '2026-06-08': ['pl1', 'pl3'],
+      '2026-06-09': ['pl2', 'pl5'],
+    },
+    preordenes: {
+      '2026-06-01': 34,
+      '2026-06-02': 28,
+      '2026-06-03': 31,
+      '2026-06-04': 22,
+      '2026-06-05': 19,
+      '2026-06-08': 26,
+      '2026-06-09': 30,
     },
   },
   {
@@ -169,7 +223,10 @@ export const menuMensual = [
     estado: 'Borrador',
     fechaPublicacion: null,
     dias: {
-      '2026-07-01': ['p1', 'p3'],
+      '2026-07-01': ['pl4', 'pl3'],
+    },
+    preordenes: {
+      '2026-07-01': 17,
     },
   },
 ]

@@ -13,14 +13,21 @@ import {
   RefreshCw,
   UtensilsCrossed,
   Tag,
+  ClipboardList,
 } from 'lucide-react'
 import Topbar from '../../components/admin/Topbar'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
-import { Field, Input } from '../../components/ui/Field'
-import { productos, menuMensual as menuMensualInicial } from '../../data/mockData'
+import { Field, Input, Textarea } from '../../components/ui/Field'
+import IngredientesInput from '../../components/admin/IngredientesInput'
+import {
+  productos,
+  menuMensual as menuMensualInicial,
+  platillosMenu as platillosMenuInicial,
+  catalogoIngredientes as catalogoIngredientesInicial,
+} from '../../data/mockData'
 import { usePromociones, HOY, pad2, formatFechaISO, sumarDias, calcularEstadoPromo } from '../../context/PromocionesContext'
 
 const emptyPromoForm = {
@@ -31,8 +38,26 @@ const emptyPromoForm = {
   vigenciaFin: formatFechaISO(sumarDias(HOY, 7)),
 }
 
+const emptyPlatilloForm = {
+  nombre: '',
+  descripcion: '',
+  imagen: '🍴',
+  ingredientes: [],
+}
+
 function isImagenArchivo(imagen) {
   return typeof imagen === 'string' && imagen.startsWith('data:')
+}
+
+// Sin campo de stock: un platillo del Menú Mensual se prepara bajo demanda
+// según el conteo de preórdenes del día, no bajo un inventario fijo.
+function validarPlatillo(form) {
+  const errores = {}
+  if (!form.nombre.trim()) errores.nombre = 'El nombre del platillo es obligatorio.'
+  if (!form.descripcion.trim()) errores.descripcion = 'La descripción es obligatoria.'
+  if (!form.imagen) errores.imagen = 'Selecciona o sube una imagen para el platillo.'
+  if (form.ingredientes.length === 0) errores.ingredientes = 'Debes declarar los ingredientes para validar alérgenos.'
+  return errores
 }
 
 const NOMBRES_MES = [
@@ -87,7 +112,8 @@ function productoConPromo(productId, promosList) {
   return promosList.find((p) => p.productos.includes(productId) && calcularEstadoPromo(p) === 'Activa')
 }
 
-// Estadisticas rapidas del mes: dias planificados, platos totales y promos vigentes en el rango del mes
+// Estadisticas rapidas del mes: dias planificados, platos totales, promos
+// vigentes y total de preordenes recibidas en el rango del mes
 function statsDelMes(m, promosList) {
   const diasHabiles = obtenerDiasDelMes(m.anio, m.mesIndex)
   const diasConfigurados = diasHabiles.filter((d) => (m.dias[d.fecha] || []).length > 0).length
@@ -98,10 +124,11 @@ function statsDelMes(m, promosList) {
   const promosActivas = promosList.filter(
     (p) => calcularEstadoPromo(p) === 'Activa' && p.vigenciaInicio <= finMes && p.vigenciaFin >= inicioMes
   ).length
-  return { diasHabiles, diasConfigurados, platosRegistrados, promosActivas, totalDias: diasHabiles.length }
+  const totalPreordenes = Object.values(m.preordenes || {}).reduce((acc, n) => acc + n, 0)
+  return { diasHabiles, diasConfigurados, platosRegistrados, promosActivas, totalPreordenes, totalDias: diasHabiles.length }
 }
 
-function CalendarioMensual({ anio, mesIndex, diasMap, onEditarDia, fechaSeleccionada, fechasConPromo }) {
+function CalendarioMensual({ anio, mesIndex, diasMap, preordenesMap, onEditarDia, fechaSeleccionada, fechasConPromo }) {
   const diasDelMes = obtenerDiasDelMes(anio, mesIndex)
   const offset = diasDelMes.length > 0 ? diasDelMes[0].diaSemana - 1 : 0 // desplazamiento dentro de la semana Lun-Vie
   const celdas = [...Array(offset).fill(null), ...diasDelMes]
@@ -120,6 +147,7 @@ function CalendarioMensual({ anio, mesIndex, diasMap, onEditarDia, fechaSeleccio
           if (!info) return <div key={`blank-${idx}`} />
 
           const cantidad = (diasMap[info.fecha] || []).length
+          const preordenesDia = preordenesMap?.[info.fecha] || 0
           const estado = estadoDia(cantidad)
           const seleccionado = fechaSeleccionada === info.fecha
           const tienePromo = fechasConPromo?.has(info.fecha)
@@ -135,6 +163,9 @@ function CalendarioMensual({ anio, mesIndex, diasMap, onEditarDia, fechaSeleccio
             >
               <span className="font-semibold">{info.dia}</span>
               {cantidad > 0 && <span className="text-[9px]">{cantidad} plato{cantidad > 1 ? 's' : ''}</span>}
+              {preordenesDia > 0 && (
+                <span className="text-[9px] font-semibold text-brand-600">{preordenesDia} preórd.</span>
+              )}
               {tienePromo && (
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-secondary-500" title="Incluye producto en promoción" />
               )}
@@ -160,7 +191,7 @@ function StatChip({ icon: Icon, label, value }) {
   )
 }
 
-function PanelEdicionDia({ fecha, productosDia, promos, onToggleProducto, onCerrar }) {
+function PanelEdicionDia({ fecha, platillos, platillosDia, preordenesDia, onToggleProducto, onCerrar }) {
   return (
     <Card className="h-full">
       <div className="flex items-start justify-between mb-3 gap-2">
@@ -176,38 +207,51 @@ function PanelEdicionDia({ fecha, productosDia, promos, onToggleProducto, onCerr
         </button>
       </div>
 
-      <p className="text-xs text-ink-500 mb-2.5">
-        {productosDia.length} plato{productosDia.length !== 1 ? 's' : ''} seleccionado{productosDia.length !== 1 ? 's' : ''}
-      </p>
-
-      <div className="grid grid-cols-2 gap-2.5">
-        {productos.map((p) => {
-          const activo = productosDia.includes(p.id)
-          const promo = productoConPromo(p.id, promos)
-          return (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => onToggleProducto(p.id)}
-              className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                activo ? 'border-teal-500 bg-teal-50' : 'border-ink-100 hover:bg-ink-50'
-              }`}
-            >
-              <span className="text-lg shrink-0">{p.imagen}</span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-medium text-ink-900 truncate">{p.nombre}</span>
-                {promo && <span className="block text-[10px] font-semibold text-teal-600">-{promo.descuento}% promo</span>}
-              </span>
-              {activo && <XIcon size={14} className="text-teal-600 shrink-0" />}
-            </button>
-          )
-        })}
+      <div className="flex items-center justify-between mb-2.5 gap-2 flex-wrap">
+        <p className="text-xs text-ink-500">
+          {platillosDia.length} plato{platillosDia.length !== 1 ? 's' : ''} seleccionado{platillosDia.length !== 1 ? 's' : ''}
+        </p>
+        <Badge tone={preordenesDia > 0 ? 'success' : 'neutral'}>
+          {preordenesDia} preorden{preordenesDia !== 1 ? 'es' : ''} este día
+        </Badge>
       </div>
+
+      {platillos.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-4 py-6">
+          Aún no hay platillos creados. Crea uno en "Platillos del Menú Mensual" para poder asignarlo a este día.
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5">
+          {platillos.map((p) => {
+            const activo = platillosDia.includes(p.id)
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onToggleProducto(p.id)}
+                className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                  activo ? 'border-teal-500 bg-teal-50' : 'border-ink-100 hover:bg-ink-50'
+                }`}
+              >
+                {isImagenArchivo(p.imagen) ? (
+                  <img src={p.imagen} alt="" className="w-6 h-6 rounded-md object-cover shrink-0" />
+                ) : (
+                  <span className="text-lg shrink-0">{p.imagen}</span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-medium text-ink-900 truncate">{p.nombre}</span>
+                </span>
+                {activo && <XIcon size={14} className="text-teal-600 shrink-0" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
     </Card>
   )
 }
 
-function MesCard({ m, promos, notificado, onToggleProducto, onPublicar, onDespublicar }) {
+function MesCard({ m, promos, platillos, notificado, onToggleProducto, onPublicar, onDespublicar }) {
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null)
 
   const stats = statsDelMes(m, promos)
@@ -217,7 +261,8 @@ function MesCard({ m, promos, notificado, onToggleProducto, onPublicar, onDespub
       .filter((d) => (m.dias[d.fecha] || []).some((pid) => productoConPromo(pid, promos)))
       .map((d) => d.fecha)
   )
-  const productosDia = fechaSeleccionada ? m.dias[fechaSeleccionada] || [] : []
+  const platillosDia = fechaSeleccionada ? m.dias[fechaSeleccionada] || [] : []
+  const preordenesDia = fechaSeleccionada ? (m.preordenes || {})[fechaSeleccionada] || 0 : 0
 
   return (
     <Card padded={false}>
@@ -268,10 +313,11 @@ function MesCard({ m, promos, notificado, onToggleProducto, onPublicar, onDespub
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
           <StatChip icon={CalendarCheck} label="Días configurados" value={`${stats.diasConfigurados}/${stats.totalDias}`} />
           <StatChip icon={UtensilsCrossed} label="Platos registrados" value={stats.platosRegistrados} />
           <StatChip icon={Tag} label="Promociones activas" value={stats.promosActivas} />
+          <StatChip icon={ClipboardList} label="Preórdenes del mes" value={stats.totalPreordenes} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-5">
@@ -280,6 +326,7 @@ function MesCard({ m, promos, notificado, onToggleProducto, onPublicar, onDespub
               anio={m.anio}
               mesIndex={m.mesIndex}
               diasMap={m.dias}
+              preordenesMap={m.preordenes}
               onEditarDia={setFechaSeleccionada}
               fechaSeleccionada={fechaSeleccionada}
               fechasConPromo={fechasConPromo}
@@ -289,8 +336,9 @@ function MesCard({ m, promos, notificado, onToggleProducto, onPublicar, onDespub
             {fechaSeleccionada ? (
               <PanelEdicionDia
                 fecha={fechaSeleccionada}
-                productosDia={productosDia}
-                promos={promos}
+                platillos={platillos}
+                platillosDia={platillosDia}
+                preordenesDia={preordenesDia}
                 onToggleProducto={(productId) => onToggleProducto(fechaSeleccionada, productId)}
                 onCerrar={() => setFechaSeleccionada(null)}
               />
@@ -322,6 +370,16 @@ export default function Menu() {
   const [promoForm, setPromoForm] = useState(emptyPromoForm)
   const [errorPromo, setErrorPromo] = useState('')
 
+  // Platillos del Menú Mensual: entidad propia, separada del Catálogo de
+  // Productos, que una vez creada queda disponible para asignarse a los
+  // días del calendario mensual.
+  const [platillos, setPlatillos] = useState(platillosMenuInicial)
+  const [catalogoIngredientes, setCatalogoIngredientes] = useState(catalogoIngredientesInicial)
+  const [platilloModalOpen, setPlatilloModalOpen] = useState(false)
+  const [editingPlatilloId, setEditingPlatilloId] = useState(null)
+  const [platilloForm, setPlatilloForm] = useState(emptyPlatilloForm)
+  const [erroresPlatillo, setErroresPlatillo] = useState({})
+
   function toggleProductoMensual(menuId, fecha, productId) {
     setMensual((prev) =>
       prev.map((m) => {
@@ -336,6 +394,74 @@ export default function Menu() {
           },
         }
       })
+    )
+  }
+
+  function agregarACatalogoIngredientes(nuevo) {
+    setCatalogoIngredientes((prev) =>
+      prev.some((i) => i.toLowerCase() === nuevo.toLowerCase())
+        ? prev
+        : [...prev, nuevo].sort((a, b) => a.localeCompare(b, 'es'))
+    )
+  }
+
+  function actualizarCampoPlatillo(campo, valor) {
+    setPlatilloForm((prev) => ({ ...prev, [campo]: valor }))
+    setErroresPlatillo((prev) => ({ ...prev, [campo]: undefined }))
+  }
+
+  function abrirNuevoPlatillo() {
+    setEditingPlatilloId(null)
+    setPlatilloForm(emptyPlatilloForm)
+    setErroresPlatillo({})
+    setPlatilloModalOpen(true)
+  }
+
+  function abrirEditarPlatillo(platillo) {
+    setEditingPlatilloId(platillo.id)
+    setPlatilloForm({
+      nombre: platillo.nombre,
+      descripcion: platillo.descripcion,
+      imagen: platillo.imagen,
+      ingredientes: [...platillo.ingredientes],
+    })
+    setErroresPlatillo({})
+    setPlatilloModalOpen(true)
+  }
+
+  function handleImagenPlatilloFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => actualizarCampoPlatillo('imagen', reader.result)
+    reader.readAsDataURL(file)
+  }
+
+  function handleSavePlatillo(e) {
+    e.preventDefault()
+    const erroresValidacion = validarPlatillo(platilloForm)
+    if (Object.keys(erroresValidacion).length > 0) {
+      setErroresPlatillo(erroresValidacion)
+      return
+    }
+
+    if (editingPlatilloId) {
+      setPlatillos((prev) => prev.map((p) => (p.id === editingPlatilloId ? { ...p, ...platilloForm } : p)))
+    } else {
+      setPlatillos((prev) => [...prev, { ...platilloForm, id: `pl${Date.now()}` }])
+    }
+    setPlatilloModalOpen(false)
+  }
+
+  function handleDeletePlatillo(id) {
+    setPlatillos((prev) => prev.filter((p) => p.id !== id))
+    setMensual((prev) =>
+      prev.map((m) => ({
+        ...m,
+        dias: Object.fromEntries(
+          Object.entries(m.dias).map(([fecha, ids]) => [fecha, ids.filter((pid) => pid !== id)])
+        ),
+      }))
     )
   }
 
@@ -484,6 +610,7 @@ export default function Menu() {
           <div className="flex bg-white border border-ink-100 rounded-xl p-1 w-fit text-sm">
             {[
               { id: 'mensual', label: 'Menú Mensual' },
+              { id: 'platillos', label: 'Platillos' },
               { id: 'promos', label: 'Promociones' },
             ].map((t) => (
               <button
@@ -503,12 +630,72 @@ export default function Menu() {
               Nuevo menú mensual
             </Button>
           )}
+          {tab === 'platillos' && (
+            <Button icon={UtensilsCrossed} onClick={abrirNuevoPlatillo}>
+              Nuevo platillo
+            </Button>
+          )}
           {tab === 'promos' && (
             <Button icon={Plus} onClick={abrirNuevaPromo}>
               Nueva promoción
             </Button>
           )}
         </div>
+
+        {tab === 'platillos' && (
+          <Card padded={false}>
+            <div className="px-5 py-3.5 border-b border-ink-100">
+              <p className="font-display font-semibold text-ink-900 text-sm">Platillos del Menú Mensual</p>
+            </div>
+            <div className="p-5">
+              {platillos.length === 0 ? (
+                <p className="text-xs text-ink-400 text-center py-4">
+                  No hay platillos creados todavía. Crea el primero con "Nuevo platillo".
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {platillos.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-start gap-2.5 rounded-xl border border-ink-100 px-3.5 py-3"
+                    >
+                      {isImagenArchivo(p.imagen) ? (
+                        <img src={p.imagen} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      ) : (
+                        <span className="text-2xl shrink-0">{p.imagen}</span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink-900 truncate">{p.nombre}</p>
+                        <p className="text-xs text-ink-400 line-clamp-2">{p.descripcion}</p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {p.ingredientes.map((ing) => (
+                            <span key={ing} className="text-[10px] bg-ink-50 text-ink-500 rounded-full px-2 py-0.5">
+                              {ing}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1 shrink-0">
+                        <button
+                          onClick={() => abrirEditarPlatillo(p)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePlatillo(p.id)}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         {tab === 'mensual' && (
           <div className="space-y-5">
@@ -519,6 +706,7 @@ export default function Menu() {
                   key={m.id}
                   m={m}
                   promos={promos}
+                  platillos={platillos}
                   notificado={menuNotificado === m.id}
                   onToggleProducto={(fecha, productId) => toggleProductoMensual(m.id, fecha, productId)}
                   onPublicar={() => handlePublicarMes(m.id)}
@@ -647,10 +835,6 @@ export default function Menu() {
           />
         </Field>
         {errorMesNuevo && <p className="text-xs text-danger-600 mt-1.5">{errorMesNuevo}</p>}
-        <p className="text-xs text-ink-500 mt-2">
-          Se crea un borrador con todos los días hábiles (lunes a viernes) del mes, listo para planificar
-          directamente desde la vista principal.
-        </p>
       </Modal>
 
       {/* Modal nueva/editar promocion */}
@@ -758,6 +942,76 @@ export default function Menu() {
             Al llegar la fecha "Fin", el precio original del producto se restaura automáticamente y queda
             disponible para una nueva promoción
           </div>
+        </form>
+      </Modal>
+
+      {/* Modal nuevo/editar platillo del Menú Mensual: entidad separada del Catálogo de Productos */}
+      <Modal
+        open={platilloModalOpen}
+        onClose={() => setPlatilloModalOpen(false)}
+        title={editingPlatilloId ? 'Editar platillo' : 'Nuevo platillo del Menú Mensual'}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setPlatilloModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSavePlatillo}>
+              {editingPlatilloId ? 'Guardar cambios' : 'Crear platillo'}
+            </Button>
+          </>
+        }
+      >
+        <form onSubmit={handleSavePlatillo}>
+          <Field label="Nombre del platillo">
+            <Input
+              value={platilloForm.nombre}
+              onChange={(e) => actualizarCampoPlatillo('nombre', e.target.value)}
+              placeholder="Ej. Almuerzo Ejecutivo"
+            />
+            {erroresPlatillo.nombre && <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.nombre}</p>}
+          </Field>
+
+          <Field label="Descripción" >
+            <Textarea
+              value={platilloForm.descripcion}
+              onChange={(e) => actualizarCampoPlatillo('descripcion', e.target.value)}
+              placeholder="Breve descripción del platillo..."
+            />
+            {erroresPlatillo.descripcion && (
+              <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.descripcion}</p>
+            )}
+          </Field>
+
+          <Field label="Imagen del platillo">
+            <div className="flex items-center gap-3">
+              {isImagenArchivo(platilloForm.imagen) ? (
+                <img src={platilloForm.imagen} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
+              ) : (
+                <span className="text-3xl">{platilloForm.imagen}</span>
+              )}
+              <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
+                <Upload size={15} />
+                Subir imagen
+                <input type="file" accept="image/*" className="hidden" onChange={handleImagenPlatilloFile} />
+              </label>
+            </div>
+            {erroresPlatillo.imagen && <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.imagen}</p>}
+          </Field>
+
+          <Field
+            label="Ingredientes (obligatorio)"
+            hint="Busca en el catálogo o agrega uno nuevo. Requerido para validar alérgenos, ya que este platillo se prepara bajo demanda según el conteo de preórdenes del día."
+          >
+            <IngredientesInput
+              value={platilloForm.ingredientes}
+              catalogo={catalogoIngredientes}
+              onChange={(nuevos) => actualizarCampoPlatillo('ingredientes', nuevos)}
+              onNuevoIngrediente={agregarACatalogoIngredientes}
+            />
+            {erroresPlatillo.ingredientes && (
+              <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.ingredientes}</p>
+            )}
+          </Field>
         </form>
       </Modal>
     </>
