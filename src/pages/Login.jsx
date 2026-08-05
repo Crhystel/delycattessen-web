@@ -1,21 +1,36 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChefHat } from "lucide-react";
 import Button from "../components/ui/Button";
 import { Field, Input } from "../components/ui/Field";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    navigate("/admin/dashboard");
+    if (isSubmitting) return;
+    setError("");
+    setIsSubmitting(true);
+    try {
+      await login(email, password);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      setError(err.message || "Correo o contraseña incorrectos.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Panel de marca */}
       <div className="hidden lg:flex flex-col justify-between bg-teal-700 text-white p-12 relative overflow-hidden">
-        {/* Círculos decorativos */}
         <div className="absolute -right-20 -top-20 w-96 h-96 rounded-full bg-white/5" />
         <div className="absolute right-16 top-16 w-40 h-40 rounded-full bg-brand-500/20" />
         <div className="absolute -left-16 bottom-24 w-72 h-72 rounded-full bg-secondary-500/15" />
@@ -42,7 +57,6 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Panel de acceso */}
       <div className="flex items-center justify-center p-6 sm:p-12 bg-white">
         <form onSubmit={handleSubmit} className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
@@ -61,11 +75,19 @@ export default function Login() {
             Ingresa tus credenciales de administrador para acceder al panel.
           </p>
 
+          {error && (
+            <div className="mb-4 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-600">
+              {error}
+            </div>
+          )}
+
           <Field label="Correo">
             <Input
               type="email"
               placeholder="nombre@delycattessen.com"
-              defaultValue="admin@delycattessen.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </Field>
 
@@ -73,7 +95,9 @@ export default function Login() {
             <Input
               type="password"
               placeholder="••••••••"
-              defaultValue="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </Field>
 
@@ -86,10 +110,14 @@ export default function Login() {
             </button>
           </div>
 
-          <Button type="submit" className="w-full mt-2" size="lg">
-            Iniciar sesión
+          <Button
+            type="submit"
+            className="w-full mt-2"
+            size="lg"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
           </Button>
-
         </form>
       </div>
     </div>
