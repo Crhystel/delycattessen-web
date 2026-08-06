@@ -6,3 +6,7 @@ export async function login(email, password) {
     body: { email, password },
   });
 }
+
+export async function getMe(token) {
+  return apiClient("/usuarios/me/", { token });
+}

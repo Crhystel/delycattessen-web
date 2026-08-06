@@ -1,25 +1,60 @@
+import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-export async function apiClient(
-  endpoint,
-  { method = "GET", body, token } = {},
-) {
-  const headers = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+// Template method: request() fixes the algorithm (headers → fetch → parse →
+// error handling), while onError() is the step subclasses override.
+class ApiClient {
+  constructor(baseUrl) {
+    this.baseUrl = baseUrl;
+  }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  async request(endpoint, { method = "GET", body, token } = {}) {
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method,
+      headers: this.buildHeaders(token),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await this.parseBody(response);
+    if (!response.ok) return this.onError(response, data, { hadToken: !!token });
+    return data;
+  }
 
-  const data = await response.json().catch(() => null);
+  buildHeaders(token) {
+    const headers = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
 
-  if (!response.ok) {
+  async parseBody(response) {
+    return response.json().catch(() => null);
+  }
+
+  onError(response, data) {
     throw new Error(
       data?.detail || "Ocurrió un error al conectar con el servidor.",
     );
   }
+}
 
-  return data;
+// Overrides the error step: a 401 on a request that carried a token means
+// the session expired, not that the request itself was malformed.
+class AuthAwareApiClient extends ApiClient {
+  constructor(baseUrl, eventBus) {
+    super(baseUrl);
+    this.eventBus = eventBus;
+  }
+
+  onError(response, data, context) {
+    if (response.status === 401 && context.hadToken) {
+      this.eventBus.emit(SESSION_EXPIRED);
+    }
+    return super.onError(response, data, context);
+  }
+}
+
+const defaultClient = new AuthAwareApiClient(API_BASE_URL, authEvents);
+
+export function apiClient(endpoint, options) {
+  return defaultClient.request(endpoint, options);
 }

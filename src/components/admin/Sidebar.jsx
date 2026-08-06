@@ -11,10 +11,10 @@ import {
 
 const links = [
   { to: '/admin/dashboard', label: 'Analítica de Ventas', icon: LayoutDashboard },
-  { to: '/admin/usuarios', label: 'Gestión de Usuarios', icon: Users },
-  { to: '/admin/productos', label: 'Catálogo e Inventario', icon: UtensilsCrossed },
+  { to: '/admin/users', label: 'Gestión de Usuarios', icon: Users },
+  { to: '/admin/products', label: 'Catálogo e Inventario', icon: UtensilsCrossed },
   { to: '/admin/menu', label: 'Menú y Promociones', icon: CalendarDays },
-  { to: '/admin/docentes', label: 'Consumo Docentes', icon: GraduationCap },
+  { to: '/admin/teachers', label: 'Consumo Docentes', icon: GraduationCap },
 ]
 
 export default function Sidebar() {

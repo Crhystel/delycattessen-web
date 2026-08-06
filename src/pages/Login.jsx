@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, sessionExpired, clearSessionExpired } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,6 +17,7 @@ export default function Login() {
     e.preventDefault();
     if (isSubmitting) return;
     setError("");
+    clearSessionExpired();
     setIsSubmitting(true);
     try {
       await login(email, password);
@@ -74,6 +75,12 @@ export default function Login() {
           <p className="text-sm text-ink-500 mt-1.5 mb-6">
             Ingresa tus credenciales de administrador para acceder al panel.
           </p>
+
+          {sessionExpired && !error && (
+            <div className="mb-4 rounded-lg bg-warning-50 px-3 py-2 text-sm text-warning-600">
+              Tu sesión expiró. Inicia sesión nuevamente para continuar.
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-600">

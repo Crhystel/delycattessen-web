@@ -21,117 +21,117 @@ import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import { Field, Input, Textarea } from '../../components/ui/Field'
-import IngredientesInput from '../../components/admin/IngredientesInput'
+import IngredientsInput from '../../components/admin/IngredientsInput'
 import {
-  productos,
-  menuMensual as menuMensualInicial,
-  platillosMenu as platillosMenuInicial,
-  catalogoIngredientes as catalogoIngredientesInicial,
+  products,
+  monthlyMenu as initialMonthlyMenu,
+  menuDishes as initialMenuDishes,
+  ingredientsCatalog as initialIngredientsCatalog,
 } from '../../data/mockData'
-import { usePromociones, HOY, pad2, formatFechaISO, sumarDias, calcularEstadoPromo } from '../../context/PromocionesContext'
+import { usePromotions, TODAY, pad2, formatDateISO, addDays, calculatePromoStatus } from '../../context/PromotionsContext'
 
 const emptyPromoForm = {
-  productos: [],
-  imagen: '🎉',
-  descuento: '',
-  vigenciaInicio: formatFechaISO(HOY),
-  vigenciaFin: formatFechaISO(sumarDias(HOY, 7)),
+  products: [],
+  image: '🎉',
+  discount: '',
+  startDate: formatDateISO(TODAY),
+  endDate: formatDateISO(addDays(TODAY, 7)),
 }
 
-const emptyPlatilloForm = {
-  nombre: '',
-  descripcion: '',
-  imagen: '🍴',
-  ingredientes: [],
+const emptyDishForm = {
+  name: '',
+  description: '',
+  image: '🍴',
+  ingredients: [],
 }
 
-function isImagenArchivo(imagen) {
-  return typeof imagen === 'string' && imagen.startsWith('data:')
+function isImageFile(image) {
+  return typeof image === 'string' && image.startsWith('data:')
 }
 
-// Sin campo de stock: un platillo del Menú Mensual se prepara bajo demanda
-// según el conteo de preórdenes del día, no bajo un inventario fijo.
-function validarPlatillo(form) {
-  const errores = {}
-  if (!form.nombre.trim()) errores.nombre = 'El nombre del platillo es obligatorio.'
-  if (!form.descripcion.trim()) errores.descripcion = 'La descripción es obligatoria.'
-  if (!form.imagen) errores.imagen = 'Selecciona o sube una imagen para el platillo.'
-  if (form.ingredientes.length === 0) errores.ingredientes = 'Debes declarar los ingredientes para validar alérgenos.'
-  return errores
+// No stock field: a Monthly Menu dish is prepared on demand based on the
+// day's preorder count, not from a fixed inventory.
+function validateDish(form) {
+  const errors = {}
+  if (!form.name.trim()) errors.name = 'El nombre del platillo es obligatorio.'
+  if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
+  if (!form.image) errors.image = 'Selecciona o sube una imagen para el platillo.'
+  if (form.ingredients.length === 0) errors.ingredients = 'Debes declarar los ingredientes para validar alérgenos.'
+  return errors
 }
 
-const NOMBRES_MES = [
+const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ]
 
-// Solo lunes a viernes cuentan como dias habiles; sabados y domingos se excluyen por completo
-function obtenerDiasDelMes(anio, mesIndex) {
-  const ultimoDia = new Date(anio, mesIndex + 1, 0).getDate()
+// Only Monday to Friday count as business days; Saturdays and Sundays are excluded entirely
+function getMonthWeekdays(year, monthIndex) {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate()
   const out = []
-  for (let d = 1; d <= ultimoDia; d++) {
-    const diaSemana = new Date(anio, mesIndex, d).getDay() // 0 Dom ... 6 Sáb
-    if (diaSemana < 1 || diaSemana > 5) continue
+  for (let d = 1; d <= lastDay; d++) {
+    const weekday = new Date(year, monthIndex, d).getDay() // 0 Sun ... 6 Sat
+    if (weekday < 1 || weekday > 5) continue
     out.push({
-      fecha: `${anio}-${pad2(mesIndex + 1)}-${pad2(d)}`,
-      dia: d,
-      diaSemana,
+      date: `${year}-${pad2(monthIndex + 1)}-${pad2(d)}`,
+      day: d,
+      weekday,
     })
   }
   return out
 }
 
-function nombreMes(anio, mesIndex) {
-  return `${NOMBRES_MES[mesIndex]} ${anio}`
+function monthLabel(year, monthIndex) {
+  return `${MONTH_NAMES[monthIndex]} ${year}`
 }
 
-function formatFechaLarga(fecha) {
-  const [anio, mes, dia] = fecha.split('-').map(Number)
-  const texto = new Date(anio, mes - 1, dia).toLocaleDateString('es-EC', {
+function formatLongDate(date) {
+  const [year, month, day] = date.split('-').map(Number)
+  const text = new Date(year, month - 1, day).toLocaleDateString('es-EC', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
   })
-  return texto.charAt(0).toUpperCase() + texto.slice(1)
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-// Estado visual de un dia segun cuantos platos tiene asignados
-function estadoDia(cantidad) {
-  if (cantidad === 0) return 'pendiente'
-  if (cantidad === 1) return 'incompleto'
-  return 'completo'
+// Visual status of a day based on how many dishes are assigned to it
+function dayStatus(count) {
+  if (count === 0) return 'pending'
+  if (count === 1) return 'incomplete'
+  return 'complete'
 }
 
-const ESTILOS_ESTADO_DIA = {
-  pendiente: 'border-ink-100 text-ink-400 hover:bg-ink-50',
-  incompleto: 'border-warning-300 bg-warning-50 text-warning-700',
-  completo: 'border-teal-500 bg-teal-50 text-teal-700',
+const DAY_STATUS_STYLES = {
+  pending: 'border-ink-100 text-ink-400 hover:bg-ink-50',
+  incomplete: 'border-warning-300 bg-warning-50 text-warning-700',
+  complete: 'border-teal-500 bg-teal-50 text-teal-700',
 }
 
-function productoConPromo(productId, promosList) {
-  return promosList.find((p) => p.productos.includes(productId) && calcularEstadoPromo(p) === 'Activa')
+function productWithPromo(productId, promosList) {
+  return promosList.find((p) => p.products.includes(productId) && calculatePromoStatus(p) === 'Activa')
 }
 
-// Estadisticas rapidas del mes: dias planificados, platos totales, promos
-// vigentes y total de preordenes recibidas en el rango del mes
-function statsDelMes(m, promosList) {
-  const diasHabiles = obtenerDiasDelMes(m.anio, m.mesIndex)
-  const diasConfigurados = diasHabiles.filter((d) => (m.dias[d.fecha] || []).length > 0).length
-  const platosRegistrados = diasHabiles.reduce((acc, d) => acc + (m.dias[d.fecha] || []).length, 0)
-  const inicioMes = `${m.anio}-${pad2(m.mesIndex + 1)}-01`
-  const ultimoDia = new Date(m.anio, m.mesIndex + 1, 0).getDate()
-  const finMes = `${m.anio}-${pad2(m.mesIndex + 1)}-${pad2(ultimoDia)}`
-  const promosActivas = promosList.filter(
-    (p) => calcularEstadoPromo(p) === 'Activa' && p.vigenciaInicio <= finMes && p.vigenciaFin >= inicioMes
+// Quick stats for the month: planned days, total dishes, active promos,
+// and total preorders received within the month's date range
+function monthStats(m, promosList) {
+  const businessDays = getMonthWeekdays(m.year, m.monthIndex)
+  const configuredDays = businessDays.filter((d) => (m.days[d.date] || []).length > 0).length
+  const registeredDishes = businessDays.reduce((acc, d) => acc + (m.days[d.date] || []).length, 0)
+  const monthStart = `${m.year}-${pad2(m.monthIndex + 1)}-01`
+  const lastDay = new Date(m.year, m.monthIndex + 1, 0).getDate()
+  const monthEnd = `${m.year}-${pad2(m.monthIndex + 1)}-${pad2(lastDay)}`
+  const activePromos = promosList.filter(
+    (p) => calculatePromoStatus(p) === 'Activa' && p.startDate <= monthEnd && p.endDate >= monthStart
   ).length
-  const totalPreordenes = Object.values(m.preordenes || {}).reduce((acc, n) => acc + n, 0)
-  return { diasHabiles, diasConfigurados, platosRegistrados, promosActivas, totalPreordenes, totalDias: diasHabiles.length }
+  const totalPreorders = Object.values(m.preorders || {}).reduce((acc, n) => acc + n, 0)
+  return { businessDays, configuredDays, registeredDishes, activePromos, totalPreorders, totalDays: businessDays.length }
 }
 
-function CalendarioMensual({ anio, mesIndex, diasMap, preordenesMap, onEditarDia, fechaSeleccionada, fechasConPromo }) {
-  const diasDelMes = obtenerDiasDelMes(anio, mesIndex)
-  const offset = diasDelMes.length > 0 ? diasDelMes[0].diaSemana - 1 : 0 // desplazamiento dentro de la semana Lun-Vie
-  const celdas = [...Array(offset).fill(null), ...diasDelMes]
+function MonthlyCalendar({ year, monthIndex, daysMap, preordersMap, onEditDay, selectedDate, datesWithPromo }) {
+  const monthDays = getMonthWeekdays(year, monthIndex)
+  const offset = monthDays.length > 0 ? monthDays[0].weekday - 1 : 0 // offset within the Mon-Fri week
+  const cells = [...Array(offset).fill(null), ...monthDays]
 
   return (
     <div>
@@ -143,30 +143,30 @@ function CalendarioMensual({ anio, mesIndex, diasMap, preordenesMap, onEditarDia
         ))}
       </div>
       <div className="grid grid-cols-5 gap-1.5">
-        {celdas.map((info, idx) => {
+        {cells.map((info, idx) => {
           if (!info) return <div key={`blank-${idx}`} />
 
-          const cantidad = (diasMap[info.fecha] || []).length
-          const preordenesDia = preordenesMap?.[info.fecha] || 0
-          const estado = estadoDia(cantidad)
-          const seleccionado = fechaSeleccionada === info.fecha
-          const tienePromo = fechasConPromo?.has(info.fecha)
+          const count = (daysMap[info.date] || []).length
+          const dayPreorders = preordersMap?.[info.date] || 0
+          const status = dayStatus(count)
+          const selected = selectedDate === info.date
+          const hasPromo = datesWithPromo?.has(info.date)
 
           return (
             <button
-              key={info.fecha}
+              key={info.date}
               type="button"
-              onClick={() => onEditarDia(info.fecha)}
+              onClick={() => onEditDay(info.date)}
               className={`relative aspect-square rounded-lg border text-[11px] flex flex-col items-center justify-center gap-0.5 transition-all ${
-                ESTILOS_ESTADO_DIA[estado]
-              } ${seleccionado ? 'ring-2 ring-brand-500' : ''}`}
+                DAY_STATUS_STYLES[status]
+              } ${selected ? 'ring-2 ring-brand-500' : ''}`}
             >
-              <span className="font-semibold">{info.dia}</span>
-              {cantidad > 0 && <span className="text-[9px]">{cantidad} plato{cantidad > 1 ? 's' : ''}</span>}
-              {preordenesDia > 0 && (
-                <span className="text-[9px] font-semibold text-brand-600">{preordenesDia} preórd.</span>
+              <span className="font-semibold">{info.day}</span>
+              {count > 0 && <span className="text-[9px]">{count} plato{count > 1 ? 's' : ''}</span>}
+              {dayPreorders > 0 && (
+                <span className="text-[9px] font-semibold text-brand-600">{dayPreorders} preórd.</span>
               )}
-              {tienePromo && (
+              {hasPromo && (
                 <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-secondary-500" title="Incluye producto en promoción" />
               )}
             </button>
@@ -191,16 +191,16 @@ function StatChip({ icon: Icon, label, value }) {
   )
 }
 
-function PanelEdicionDia({ fecha, platillos, platillosDia, preordenesDia, onToggleProducto, onCerrar }) {
+function DayEditPanel({ date, dishes, dayDishes, dayPreorders, onToggleProduct, onClose }) {
   return (
     <Card className="h-full">
       <div className="flex items-start justify-between mb-3 gap-2">
         <div>
           <p className="text-[11px] text-ink-400">Editando día</p>
-          <p className="font-display font-semibold text-ink-900 text-sm">{formatFechaLarga(fecha)}</p>
+          <p className="font-display font-semibold text-ink-900 text-sm">{formatLongDate(date)}</p>
         </div>
         <button
-          onClick={onCerrar}
+          onClick={onClose}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100 shrink-0"
         >
           <XIcon size={16} />
@@ -209,39 +209,39 @@ function PanelEdicionDia({ fecha, platillos, platillosDia, preordenesDia, onTogg
 
       <div className="flex items-center justify-between mb-2.5 gap-2 flex-wrap">
         <p className="text-xs text-ink-500">
-          {platillosDia.length} plato{platillosDia.length !== 1 ? 's' : ''} seleccionado{platillosDia.length !== 1 ? 's' : ''}
+          {dayDishes.length} plato{dayDishes.length !== 1 ? 's' : ''} seleccionado{dayDishes.length !== 1 ? 's' : ''}
         </p>
-        <Badge tone={preordenesDia > 0 ? 'success' : 'neutral'}>
-          {preordenesDia} preorden{preordenesDia !== 1 ? 'es' : ''} este día
+        <Badge tone={dayPreorders > 0 ? 'success' : 'neutral'}>
+          {dayPreorders} preorden{dayPreorders !== 1 ? 'es' : ''} este día
         </Badge>
       </div>
 
-      {platillos.length === 0 ? (
+      {dishes.length === 0 ? (
         <div className="rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-4 py-6">
           Aún no hay platillos creados. Crea uno en "Platillos del Menú Mensual" para poder asignarlo a este día.
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2.5">
-          {platillos.map((p) => {
-            const activo = platillosDia.includes(p.id)
+          {dishes.map((p) => {
+            const active = dayDishes.includes(p.id)
             return (
               <button
                 key={p.id}
                 type="button"
-                onClick={() => onToggleProducto(p.id)}
+                onClick={() => onToggleProduct(p.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                  activo ? 'border-teal-500 bg-teal-50' : 'border-ink-100 hover:bg-ink-50'
+                  active ? 'border-teal-500 bg-teal-50' : 'border-ink-100 hover:bg-ink-50'
                 }`}
               >
-                {isImagenArchivo(p.imagen) ? (
-                  <img src={p.imagen} alt="" className="w-6 h-6 rounded-md object-cover shrink-0" />
+                {isImageFile(p.image) ? (
+                  <img src={p.image} alt="" className="w-6 h-6 rounded-md object-cover shrink-0" />
                 ) : (
-                  <span className="text-lg shrink-0">{p.imagen}</span>
+                  <span className="text-lg shrink-0">{p.image}</span>
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-medium text-ink-900 truncate">{p.nombre}</span>
+                  <span className="block text-xs font-medium text-ink-900 truncate">{p.name}</span>
                 </span>
-                {activo && <XIcon size={14} className="text-teal-600 shrink-0" />}
+                {active && <XIcon size={14} className="text-teal-600 shrink-0" />}
               </button>
             )
           })}
@@ -251,18 +251,18 @@ function PanelEdicionDia({ fecha, platillos, platillosDia, preordenesDia, onTogg
   )
 }
 
-function MesCard({ m, promos, platillos, notificado, onToggleProducto, onPublicar, onDespublicar }) {
-  const [fechaSeleccionada, setFechaSeleccionada] = useState(null)
+function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, onUnpublish }) {
+  const [selectedDate, setSelectedDate] = useState(null)
 
-  const stats = statsDelMes(m, promos)
-  const porcentaje = stats.totalDias > 0 ? Math.round((stats.diasConfigurados / stats.totalDias) * 100) : 0
-  const fechasConPromo = new Set(
-    stats.diasHabiles
-      .filter((d) => (m.dias[d.fecha] || []).some((pid) => productoConPromo(pid, promos)))
-      .map((d) => d.fecha)
+  const stats = monthStats(m, promos)
+  const percentage = stats.totalDays > 0 ? Math.round((stats.configuredDays / stats.totalDays) * 100) : 0
+  const datesWithPromo = new Set(
+    stats.businessDays
+      .filter((d) => (m.days[d.date] || []).some((pid) => productWithPromo(pid, promos)))
+      .map((d) => d.date)
   )
-  const platillosDia = fechaSeleccionada ? m.dias[fechaSeleccionada] || [] : []
-  const preordenesDia = fechaSeleccionada ? (m.preordenes || {})[fechaSeleccionada] || 0 : 0
+  const dayDishes = selectedDate ? m.days[selectedDate] || [] : []
+  const dayPreorders = selectedDate ? (m.preorders || {})[selectedDate] || 0 : 0
 
   return (
     <Card padded={false}>
@@ -272,27 +272,27 @@ function MesCard({ m, promos, platillos, notificado, onToggleProducto, onPublica
             <CalendarDays size={16} />
           </div>
           <div>
-            <p className="font-display font-semibold text-ink-900 text-sm">{m.mes}</p>
-            {m.fechaPublicacion && (
-              <p className="text-[11px] text-ink-400">Publicado el {m.fechaPublicacion}</p>
+            <p className="font-display font-semibold text-ink-900 text-sm">{m.month}</p>
+            {m.publicationDate && (
+              <p className="text-[11px] text-ink-400">Publicado el {m.publicationDate}</p>
             )}
           </div>
-          <Badge tone={m.estado === 'Publicado' ? 'success' : 'neutral'}>{m.estado}</Badge>
+          <Badge tone={m.status === 'Publicado' ? 'success' : 'neutral'}>{m.status}</Badge>
         </div>
         <div className="flex items-center gap-2">
-          {m.estado === 'Publicado' ? (
-            <Button icon={Undo2} variant="outline" onClick={onDespublicar}>
+          {m.status === 'Publicado' ? (
+            <Button icon={Undo2} variant="outline" onClick={onUnpublish}>
               Pasar a borrador
             </Button>
           ) : (
-            <Button icon={Send} onClick={onPublicar}>
+            <Button icon={Send} onClick={onPublish}>
               Publicar menú
             </Button>
           )}
         </div>
       </div>
 
-      {notificado && (
+      {notified && (
         <div className="mx-4 mt-4 flex items-center gap-2.5 bg-success-50 text-success-600 text-xs font-medium rounded-xl px-3.5 py-3">
           <Mail size={15} className="shrink-0" />
           Notificación enviada por correo a todos los usuarios registrados.
@@ -303,44 +303,44 @@ function MesCard({ m, promos, platillos, notificado, onToggleProducto, onPublica
         <div>
           <div className="flex items-center justify-between text-xs text-ink-500 mb-1.5">
             <span>Progreso del mes</span>
-            <span className="font-semibold text-ink-700">{porcentaje}% planificado</span>
+            <span className="font-semibold text-ink-700">{percentage}% planificado</span>
           </div>
           <div className="h-2 rounded-full bg-ink-100 overflow-hidden">
             <div
               className="h-full bg-teal-500 rounded-full transition-all"
-              style={{ width: `${porcentaje}%` }}
+              style={{ width: `${percentage}%` }}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-          <StatChip icon={CalendarCheck} label="Días configurados" value={`${stats.diasConfigurados}/${stats.totalDias}`} />
-          <StatChip icon={UtensilsCrossed} label="Platos registrados" value={stats.platosRegistrados} />
-          <StatChip icon={Tag} label="Promociones activas" value={stats.promosActivas} />
-          <StatChip icon={ClipboardList} label="Preórdenes del mes" value={stats.totalPreordenes} />
+          <StatChip icon={CalendarCheck} label="Días configurados" value={`${stats.configuredDays}/${stats.totalDays}`} />
+          <StatChip icon={UtensilsCrossed} label="Platos registrados" value={stats.registeredDishes} />
+          <StatChip icon={Tag} label="Promociones activas" value={stats.activePromos} />
+          <StatChip icon={ClipboardList} label="Preórdenes del mes" value={stats.totalPreorders} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-5">
           <div className="lg:w-[400px] shrink-0">
-            <CalendarioMensual
-              anio={m.anio}
-              mesIndex={m.mesIndex}
-              diasMap={m.dias}
-              preordenesMap={m.preordenes}
-              onEditarDia={setFechaSeleccionada}
-              fechaSeleccionada={fechaSeleccionada}
-              fechasConPromo={fechasConPromo}
+            <MonthlyCalendar
+              year={m.year}
+              monthIndex={m.monthIndex}
+              daysMap={m.days}
+              preordersMap={m.preorders}
+              onEditDay={setSelectedDate}
+              selectedDate={selectedDate}
+              datesWithPromo={datesWithPromo}
             />
           </div>
           <div className="flex-1 min-w-0">
-            {fechaSeleccionada ? (
-              <PanelEdicionDia
-                fecha={fechaSeleccionada}
-                platillos={platillos}
-                platillosDia={platillosDia}
-                preordenesDia={preordenesDia}
-                onToggleProducto={(productId) => onToggleProducto(fechaSeleccionada, productId)}
-                onCerrar={() => setFechaSeleccionada(null)}
+            {selectedDate ? (
+              <DayEditPanel
+                date={selectedDate}
+                dishes={dishes}
+                dayDishes={dayDishes}
+                dayPreorders={dayPreorders}
+                onToggleProduct={(productId) => onToggleProduct(selectedDate, productId)}
+                onClose={() => setSelectedDate(null)}
               />
             ) : (
               <div className="h-full min-h-[180px] flex items-center justify-center rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-6">
@@ -355,239 +355,239 @@ function MesCard({ m, promos, platillos, notificado, onToggleProducto, onPublica
 }
 
 export default function Menu() {
-  const [tab, setTab] = useState('mensual')
-  const { promociones: promos, setPromociones: setPromos } = usePromociones()
+  const [tab, setTab] = useState('monthly')
+  const { promotions: promos, setPromotions: setPromos } = usePromotions()
 
-  const [mensual, setMensual] = useState(menuMensualInicial)
-  const [menuNotificado, setMenuNotificado] = useState(null) // id del menu recien publicado
+  const [monthlyMenus, setMonthlyMenus] = useState(initialMonthlyMenu)
+  const [notifiedMenu, setNotifiedMenu] = useState(null) // id of the just-published menu
 
-  const [nuevoMesModalOpen, setNuevoMesModalOpen] = useState(false)
-  const [mesNuevo, setMesNuevo] = useState('') // 'YYYY-MM'
-  const [errorMesNuevo, setErrorMesNuevo] = useState('')
+  const [newMonthModalOpen, setNewMonthModalOpen] = useState(false)
+  const [newMonth, setNewMonth] = useState('') // 'YYYY-MM'
+  const [newMonthError, setNewMonthError] = useState('')
 
   const [promoModalOpen, setPromoModalOpen] = useState(false)
   const [editingPromoId, setEditingPromoId] = useState(null)
   const [promoForm, setPromoForm] = useState(emptyPromoForm)
-  const [errorPromo, setErrorPromo] = useState('')
+  const [promoError, setPromoError] = useState('')
 
-  // Platillos del Menú Mensual: entidad propia, separada del Catálogo de
-  // Productos, que una vez creada queda disponible para asignarse a los
-  // días del calendario mensual.
-  const [platillos, setPlatillos] = useState(platillosMenuInicial)
-  const [catalogoIngredientes, setCatalogoIngredientes] = useState(catalogoIngredientesInicial)
-  const [platilloModalOpen, setPlatilloModalOpen] = useState(false)
-  const [editingPlatilloId, setEditingPlatilloId] = useState(null)
-  const [platilloForm, setPlatilloForm] = useState(emptyPlatilloForm)
-  const [erroresPlatillo, setErroresPlatillo] = useState({})
+  // Monthly Menu dishes: their own entity, separate from the Products
+  // catalog, that once created becomes available to assign to days on
+  // the monthly calendar.
+  const [dishes, setDishes] = useState(initialMenuDishes)
+  const [ingredientsCatalog, setIngredientsCatalog] = useState(initialIngredientsCatalog)
+  const [dishModalOpen, setDishModalOpen] = useState(false)
+  const [editingDishId, setEditingDishId] = useState(null)
+  const [dishForm, setDishForm] = useState(emptyDishForm)
+  const [dishErrors, setDishErrors] = useState({})
 
-  function toggleProductoMensual(menuId, fecha, productId) {
-    setMensual((prev) =>
+  function toggleMonthlyProduct(menuId, date, productId) {
+    setMonthlyMenus((prev) =>
       prev.map((m) => {
         if (m.id !== menuId) return m
-        const actuales = m.dias[fecha] || []
-        const existe = actuales.includes(productId)
+        const current = m.days[date] || []
+        const exists = current.includes(productId)
         return {
           ...m,
-          dias: {
-            ...m.dias,
-            [fecha]: existe ? actuales.filter((id) => id !== productId) : [...actuales, productId],
+          days: {
+            ...m.days,
+            [date]: exists ? current.filter((id) => id !== productId) : [...current, productId],
           },
         }
       })
     )
   }
 
-  function agregarACatalogoIngredientes(nuevo) {
-    setCatalogoIngredientes((prev) =>
-      prev.some((i) => i.toLowerCase() === nuevo.toLowerCase())
+  function addToIngredientsCatalog(newIngredient) {
+    setIngredientsCatalog((prev) =>
+      prev.some((i) => i.toLowerCase() === newIngredient.toLowerCase())
         ? prev
-        : [...prev, nuevo].sort((a, b) => a.localeCompare(b, 'es'))
+        : [...prev, newIngredient].sort((a, b) => a.localeCompare(b, 'es'))
     )
   }
 
-  function actualizarCampoPlatillo(campo, valor) {
-    setPlatilloForm((prev) => ({ ...prev, [campo]: valor }))
-    setErroresPlatillo((prev) => ({ ...prev, [campo]: undefined }))
+  function updateDishField(field, value) {
+    setDishForm((prev) => ({ ...prev, [field]: value }))
+    setDishErrors((prev) => ({ ...prev, [field]: undefined }))
   }
 
-  function abrirNuevoPlatillo() {
-    setEditingPlatilloId(null)
-    setPlatilloForm(emptyPlatilloForm)
-    setErroresPlatillo({})
-    setPlatilloModalOpen(true)
+  function openNewDishModal() {
+    setEditingDishId(null)
+    setDishForm(emptyDishForm)
+    setDishErrors({})
+    setDishModalOpen(true)
   }
 
-  function abrirEditarPlatillo(platillo) {
-    setEditingPlatilloId(platillo.id)
-    setPlatilloForm({
-      nombre: platillo.nombre,
-      descripcion: platillo.descripcion,
-      imagen: platillo.imagen,
-      ingredientes: [...platillo.ingredientes],
+  function openEditDishModal(dish) {
+    setEditingDishId(dish.id)
+    setDishForm({
+      name: dish.name,
+      description: dish.description,
+      image: dish.image,
+      ingredients: [...dish.ingredients],
     })
-    setErroresPlatillo({})
-    setPlatilloModalOpen(true)
+    setDishErrors({})
+    setDishModalOpen(true)
   }
 
-  function handleImagenPlatilloFile(e) {
+  function handleDishImageFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => actualizarCampoPlatillo('imagen', reader.result)
+    reader.onload = () => updateDishField('image', reader.result)
     reader.readAsDataURL(file)
   }
 
-  function handleSavePlatillo(e) {
+  function handleSaveDish(e) {
     e.preventDefault()
-    const erroresValidacion = validarPlatillo(platilloForm)
-    if (Object.keys(erroresValidacion).length > 0) {
-      setErroresPlatillo(erroresValidacion)
+    const validationErrors = validateDish(dishForm)
+    if (Object.keys(validationErrors).length > 0) {
+      setDishErrors(validationErrors)
       return
     }
 
-    if (editingPlatilloId) {
-      setPlatillos((prev) => prev.map((p) => (p.id === editingPlatilloId ? { ...p, ...platilloForm } : p)))
+    if (editingDishId) {
+      setDishes((prev) => prev.map((p) => (p.id === editingDishId ? { ...p, ...dishForm } : p)))
     } else {
-      setPlatillos((prev) => [...prev, { ...platilloForm, id: `pl${Date.now()}` }])
+      setDishes((prev) => [...prev, { ...dishForm, id: `pl${Date.now()}` }])
     }
-    setPlatilloModalOpen(false)
+    setDishModalOpen(false)
   }
 
-  function handleDeletePlatillo(id) {
-    setPlatillos((prev) => prev.filter((p) => p.id !== id))
-    setMensual((prev) =>
+  function handleDeleteDish(id) {
+    setDishes((prev) => prev.filter((p) => p.id !== id))
+    setMonthlyMenus((prev) =>
       prev.map((m) => ({
         ...m,
-        dias: Object.fromEntries(
-          Object.entries(m.dias).map(([fecha, ids]) => [fecha, ids.filter((pid) => pid !== id)])
+        days: Object.fromEntries(
+          Object.entries(m.days).map(([date, ids]) => [date, ids.filter((pid) => pid !== id)])
         ),
       }))
     )
   }
 
-  function abrirNuevoMes() {
-    setMesNuevo('')
-    setErrorMesNuevo('')
-    setNuevoMesModalOpen(true)
+  function openNewMonthModal() {
+    setNewMonth('')
+    setNewMonthError('')
+    setNewMonthModalOpen(true)
   }
 
-  function handleCrearMes() {
-    if (!mesNuevo) return
-    const [anio, mes] = mesNuevo.split('-').map(Number)
-    const mesIndex = mes - 1
-    const yaExiste = mensual.some((m) => m.anio === anio && m.mesIndex === mesIndex)
-    if (yaExiste) {
-      setErrorMesNuevo('Ya existe un menú mensual para ese mes.')
+  function handleCreateMonth() {
+    if (!newMonth) return
+    const [year, month] = newMonth.split('-').map(Number)
+    const monthIndex = month - 1
+    const alreadyExists = monthlyMenus.some((m) => m.year === year && m.monthIndex === monthIndex)
+    if (alreadyExists) {
+      setNewMonthError('Ya existe un menú mensual para ese mes.')
       return
     }
-    const habiles = obtenerDiasDelMes(anio, mesIndex)
-    setMensual((prev) => [
+    const businessDays = getMonthWeekdays(year, monthIndex)
+    setMonthlyMenus((prev) => [
       {
         id: `mm${Date.now()}`,
-        mes: nombreMes(anio, mesIndex),
-        anio,
-        mesIndex,
-        estado: 'Borrador',
-        fechaPublicacion: null,
-        dias: Object.fromEntries(habiles.map((d) => [d.fecha, []])),
+        month: monthLabel(year, monthIndex),
+        year,
+        monthIndex,
+        status: 'Borrador',
+        publicationDate: null,
+        days: Object.fromEntries(businessDays.map((d) => [d.date, []])),
       },
       ...prev,
     ])
-    setNuevoMesModalOpen(false)
+    setNewMonthModalOpen(false)
   }
 
-  function handlePublicarMes(menuId) {
-    setMensual((prev) =>
+  function handlePublishMonth(menuId) {
+    setMonthlyMenus((prev) =>
       prev.map((m) =>
-        m.id === menuId ? { ...m, estado: 'Publicado', fechaPublicacion: formatFechaISO(HOY) } : m
+        m.id === menuId ? { ...m, status: 'Publicado', publicationDate: formatDateISO(TODAY) } : m
       )
     )
-    // RF-09: al publicar, se dispara automáticamente una notificación por
-    // correo a todos los usuarios registrados (padres, docentes y personal).
-    setMenuNotificado(menuId)
-    setTimeout(() => setMenuNotificado((actual) => (actual === menuId ? null : actual)), 4000)
+    // RF-09: publishing automatically triggers an email notification to
+    // all registered users (parents, teachers, and staff).
+    setNotifiedMenu(menuId)
+    setTimeout(() => setNotifiedMenu((current) => (current === menuId ? null : current)), 4000)
   }
 
-  function handleDespublicarMes(menuId) {
-    setMensual((prev) => prev.map((m) => (m.id === menuId ? { ...m, estado: 'Borrador' } : m)))
+  function handleUnpublishMonth(menuId) {
+    setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? { ...m, status: 'Borrador' } : m)))
   }
 
-  function tienePromoActiva(productoId, excludeId) {
+  function hasActivePromo(productId, excludeId) {
     return promos.some(
-      (p) => p.id !== excludeId && p.productos.includes(productoId) && calcularEstadoPromo(p) === 'Activa'
+      (p) => p.id !== excludeId && p.products.includes(productId) && calculatePromoStatus(p) === 'Activa'
     )
   }
 
-  function abrirNuevaPromo() {
+  function openNewPromoModal() {
     setEditingPromoId(null)
     setPromoForm(emptyPromoForm)
-    setErrorPromo('')
+    setPromoError('')
     setPromoModalOpen(true)
   }
 
-  function abrirEditarPromo(promo) {
+  function openEditPromoModal(promo) {
     setEditingPromoId(promo.id)
     setPromoForm({
-      productos: [...promo.productos],
-      imagen: promo.imagen,
-      descuento: String(promo.descuento),
-      vigenciaInicio: promo.vigenciaInicio,
-      vigenciaFin: promo.vigenciaFin,
+      products: [...promo.products],
+      image: promo.image,
+      discount: String(promo.discount),
+      startDate: promo.startDate,
+      endDate: promo.endDate,
     })
-    setErrorPromo('')
+    setPromoError('')
     setPromoModalOpen(true)
   }
 
-  function toggleProductoAplicable(productId) {
-    const yaElegido = promoForm.productos.includes(productId)
-    if (!yaElegido && tienePromoActiva(productId, editingPromoId)) {
-      setErrorPromo('Ese producto ya tiene una promoción activa. Espera a que venza o elige otro producto.')
+  function toggleApplicableProduct(productId) {
+    const alreadyChosen = promoForm.products.includes(productId)
+    if (!alreadyChosen && hasActivePromo(productId, editingPromoId)) {
+      setPromoError('Ese producto ya tiene una promoción activa. Espera a que venza o elige otro producto.')
       return
     }
-    setErrorPromo('')
+    setPromoError('')
     setPromoForm((prev) => ({
       ...prev,
-      productos: yaElegido ? prev.productos.filter((id) => id !== productId) : [...prev.productos, productId],
+      products: alreadyChosen ? prev.products.filter((id) => id !== productId) : [...prev.products, productId],
     }))
   }
 
-  function seleccionarTodosDisponibles() {
-    setErrorPromo('')
-    const disponibles = productos
-      .filter((p) => !tienePromoActiva(p.id, editingPromoId))
+  function selectAllAvailable() {
+    setPromoError('')
+    const available = products
+      .filter((p) => !hasActivePromo(p.id, editingPromoId))
       .map((p) => p.id)
-    setPromoForm((prev) => ({ ...prev, productos: disponibles }))
+    setPromoForm((prev) => ({ ...prev, products: available }))
   }
 
-  function quitarTodos() {
-    setErrorPromo('')
-    setPromoForm((prev) => ({ ...prev, productos: [] }))
+  function clearAll() {
+    setPromoError('')
+    setPromoForm((prev) => ({ ...prev, products: [] }))
   }
 
-  function handleImagenPromoFile(e) {
+  function handlePromoImageFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setPromoForm((prev) => ({ ...prev, imagen: reader.result }))
+    reader.onload = () => setPromoForm((prev) => ({ ...prev, image: reader.result }))
     reader.readAsDataURL(file)
   }
 
   function handleSavePromo(e) {
     e.preventDefault()
-    if (promoForm.productos.length === 0) {
-      setErrorPromo('Selecciona al menos un producto para la promoción.')
+    if (promoForm.products.length === 0) {
+      setPromoError('Selecciona al menos un producto para la promoción.')
       return
     }
-    if (promoForm.productos.some((id) => tienePromoActiva(id, editingPromoId))) {
-      setErrorPromo('Uno de los productos elegidos ya tiene una promoción activa.')
+    if (promoForm.products.some((id) => hasActivePromo(id, editingPromoId))) {
+      setPromoError('Uno de los productos elegidos ya tiene una promoción activa.')
       return
     }
-    if (!promoForm.descuento || Number(promoForm.descuento) <= 0) {
-      setErrorPromo('Ingresa un porcentaje de descuento válido.')
+    if (!promoForm.discount || Number(promoForm.discount) <= 0) {
+      setPromoError('Ingresa un porcentaje de descuento válido.')
       return
     }
 
-    const payload = { ...promoForm, descuento: Number(promoForm.descuento) || 0 }
+    const payload = { ...promoForm, discount: Number(promoForm.discount) || 0 }
 
     if (editingPromoId) {
       setPromos((prev) => prev.map((p) => (p.id === editingPromoId ? { ...p, ...payload } : p)))
@@ -609,8 +609,8 @@ export default function Menu() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex bg-white border border-ink-100 rounded-xl p-1 w-fit text-sm">
             {[
-              { id: 'mensual', label: 'Menú Mensual' },
-              { id: 'platillos', label: 'Platillos' },
+              { id: 'monthly', label: 'Menú Mensual' },
+              { id: 'dishes', label: 'Platillos' },
               { id: 'promos', label: 'Promociones' },
             ].map((t) => (
               <button
@@ -625,50 +625,50 @@ export default function Menu() {
             ))}
           </div>
 
-          {tab === 'mensual' && (
-            <Button icon={Plus} onClick={abrirNuevoMes}>
+          {tab === 'monthly' && (
+            <Button icon={Plus} onClick={openNewMonthModal}>
               Nuevo menú mensual
             </Button>
           )}
-          {tab === 'platillos' && (
-            <Button icon={UtensilsCrossed} onClick={abrirNuevoPlatillo}>
+          {tab === 'dishes' && (
+            <Button icon={UtensilsCrossed} onClick={openNewDishModal}>
               Nuevo platillo
             </Button>
           )}
           {tab === 'promos' && (
-            <Button icon={Plus} onClick={abrirNuevaPromo}>
+            <Button icon={Plus} onClick={openNewPromoModal}>
               Nueva promoción
             </Button>
           )}
         </div>
 
-        {tab === 'platillos' && (
+        {tab === 'dishes' && (
           <Card padded={false}>
             <div className="px-5 py-3.5 border-b border-ink-100">
               <p className="font-display font-semibold text-ink-900 text-sm">Platillos del Menú Mensual</p>
             </div>
             <div className="p-5">
-              {platillos.length === 0 ? (
+              {dishes.length === 0 ? (
                 <p className="text-xs text-ink-400 text-center py-4">
                   No hay platillos creados todavía. Crea el primero con "Nuevo platillo".
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {platillos.map((p) => (
+                  {dishes.map((p) => (
                     <div
                       key={p.id}
                       className="flex items-start gap-2.5 rounded-xl border border-ink-100 px-3.5 py-3"
                     >
-                      {isImagenArchivo(p.imagen) ? (
-                        <img src={p.imagen} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      {isImageFile(p.image) ? (
+                        <img src={p.image} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
                       ) : (
-                        <span className="text-2xl shrink-0">{p.imagen}</span>
+                        <span className="text-2xl shrink-0">{p.image}</span>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-ink-900 truncate">{p.nombre}</p>
-                        <p className="text-xs text-ink-400 line-clamp-2">{p.descripcion}</p>
+                        <p className="text-sm font-medium text-ink-900 truncate">{p.name}</p>
+                        <p className="text-xs text-ink-400 line-clamp-2">{p.description}</p>
                         <div className="flex flex-wrap gap-1 mt-1.5">
-                          {p.ingredientes.map((ing) => (
+                          {p.ingredients.map((ing) => (
                             <span key={ing} className="text-[10px] bg-ink-50 text-ink-500 rounded-full px-2 py-0.5">
                               {ing}
                             </span>
@@ -677,13 +677,13 @@ export default function Menu() {
                       </div>
                       <div className="flex flex-col gap-1 shrink-0">
                         <button
-                          onClick={() => abrirEditarPlatillo(p)}
+                          onClick={() => openEditDishModal(p)}
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
                         >
                           <Pencil size={13} />
                         </button>
                         <button
-                          onClick={() => handleDeletePlatillo(p.id)}
+                          onClick={() => handleDeleteDish(p.id)}
                           className="w-7 h-7 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
                         >
                           <Trash2 size={13} />
@@ -697,20 +697,20 @@ export default function Menu() {
           </Card>
         )}
 
-        {tab === 'mensual' && (
+        {tab === 'monthly' && (
           <div className="space-y-5">
-            {[...mensual]
-              .sort((a, b) => b.anio * 12 + b.mesIndex - (a.anio * 12 + a.mesIndex))
+            {[...monthlyMenus]
+              .sort((a, b) => b.year * 12 + b.monthIndex - (a.year * 12 + a.monthIndex))
               .map((m) => (
-                <MesCard
+                <MonthCard
                   key={m.id}
                   m={m}
                   promos={promos}
-                  platillos={platillos}
-                  notificado={menuNotificado === m.id}
-                  onToggleProducto={(fecha, productId) => toggleProductoMensual(m.id, fecha, productId)}
-                  onPublicar={() => handlePublicarMes(m.id)}
-                  onDespublicar={() => handleDespublicarMes(m.id)}
+                  dishes={dishes}
+                  notified={notifiedMenu === m.id}
+                  onToggleProduct={(date, productId) => toggleMonthlyProduct(m.id, date, productId)}
+                  onPublish={() => handlePublishMonth(m.id)}
+                  onUnpublish={() => handleUnpublishMonth(m.id)}
                 />
               ))}
           </div>
@@ -739,45 +739,45 @@ export default function Menu() {
                   </thead>
                   <tbody>
                     {promos.map((promo) => {
-                      const estado = calcularEstadoPromo(promo)
-                      const productosAplicables = promo.productos
-                        .map((id) => productos.find((p) => p.id === id))
+                      const status = calculatePromoStatus(promo)
+                      const applicableProducts = promo.products
+                        .map((id) => products.find((p) => p.id === id))
                         .filter(Boolean)
                       return (
                         <tr key={promo.id} className="border-b border-ink-100 last:border-0 hover:bg-ink-50/60">
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 overflow-hidden">
-                                {isImagenArchivo(promo.imagen) ? (
-                                  <img src={promo.imagen} alt="" className="w-full h-full object-cover" />
+                                {isImageFile(promo.image) ? (
+                                  <img src={promo.image} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <span className="text-lg">{promo.imagen}</span>
+                                  <span className="text-lg">{promo.image}</span>
                                 )}
                               </div>
                               <div className="flex flex-wrap gap-1">
-                                {productosAplicables.map((p) => (
+                                {applicableProducts.map((p) => (
                                   <Badge key={p.id} tone="neutral">
-                                    {p.imagen} {p.nombre}
+                                    {p.image} {p.name}
                                   </Badge>
                                 ))}
-                                {productosAplicables.length === 0 && <span className="text-ink-300">—</span>}
+                                {applicableProducts.length === 0 && <span className="text-ink-300">—</span>}
                               </div>
                             </div>
                           </td>
                           <td className="px-5 py-3">
                             <span className="inline-flex items-center bg-teal-50 text-teal-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                              -{promo.descuento}%
+                              -{promo.discount}%
                             </span>
                           </td>
-                          <td className="px-5 py-3 text-ink-500">{promo.vigenciaInicio}</td>
-                          <td className="px-5 py-3 text-ink-500">{promo.vigenciaFin}</td>
+                          <td className="px-5 py-3 text-ink-500">{promo.startDate}</td>
+                          <td className="px-5 py-3 text-ink-500">{promo.endDate}</td>
                           <td className="px-5 py-3">
-                            <Badge tone={estado === 'Activa' ? 'success' : 'neutral'}>{estado}</Badge>
+                            <Badge tone={status === 'Activa' ? 'success' : 'neutral'}>{status}</Badge>
                           </td>
                           <td className="px-5 py-3 text-right">
                             <div className="flex justify-end gap-1.5">
                               <button
-                                onClick={() => abrirEditarPromo(promo)}
+                                onClick={() => openEditPromoModal(promo)}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
                               >
                                 <Pencil size={15} />
@@ -808,17 +808,17 @@ export default function Menu() {
         )}
       </main>
 
-      {/* Modal creacion de menu mensual: solo elige el mes, la planificacion se hace en la vista principal */}
+      {/* New monthly menu modal: only picks the month, planning happens in the main view */}
       <Modal
-        open={nuevoMesModalOpen}
-        onClose={() => setNuevoMesModalOpen(false)}
+        open={newMonthModalOpen}
+        onClose={() => setNewMonthModalOpen(false)}
         title="Nuevo menú mensual"
         footer={
           <>
-            <Button variant="outline" onClick={() => setNuevoMesModalOpen(false)}>
+            <Button variant="outline" onClick={() => setNewMonthModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleCrearMes} disabled={!mesNuevo}>
+            <Button onClick={handleCreateMonth} disabled={!newMonth}>
               Crear borrador
             </Button>
           </>
@@ -827,17 +827,17 @@ export default function Menu() {
         <Field label="Mes a planificar">
           <Input
             type="month"
-            value={mesNuevo}
+            value={newMonth}
             onChange={(e) => {
-              setMesNuevo(e.target.value)
-              setErrorMesNuevo('')
+              setNewMonth(e.target.value)
+              setNewMonthError('')
             }}
           />
         </Field>
-        {errorMesNuevo && <p className="text-xs text-danger-600 mt-1.5">{errorMesNuevo}</p>}
+        {newMonthError && <p className="text-xs text-danger-600 mt-1.5">{newMonthError}</p>}
       </Modal>
 
-      {/* Modal nueva/editar promocion */}
+      {/* New/edit promotion modal */}
       <Modal
         open={promoModalOpen}
         onClose={() => setPromoModalOpen(false)}
@@ -860,54 +860,54 @@ export default function Menu() {
             <div className="flex justify-end mb-2">
               <button
                 type="button"
-                onClick={promoForm.productos.length > 0 ? quitarTodos : seleccionarTodosDisponibles}
+                onClick={promoForm.products.length > 0 ? clearAll : selectAllAvailable}
                 className="text-xs font-medium text-teal-600 hover:text-teal-700"
               >
-                {promoForm.productos.length > 0 ? 'Quitar todos' : 'Seleccionar todos los disponibles'}
+                {promoForm.products.length > 0 ? 'Quitar todos' : 'Seleccionar todos los disponibles'}
               </button>
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
-              {productos.map((p) => {
-                const activo = promoForm.productos.includes(p.id)
-                const bloqueado = !activo && tienePromoActiva(p.id, editingPromoId)
+              {products.map((p) => {
+                const active = promoForm.products.includes(p.id)
+                const blocked = !active && hasActivePromo(p.id, editingPromoId)
                 return (
                   <button
                     key={p.id}
                     type="button"
-                    disabled={bloqueado}
-                    onClick={() => toggleProductoAplicable(p.id)}
+                    disabled={blocked}
+                    onClick={() => toggleApplicableProduct(p.id)}
                     className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-                      activo
+                      active
                         ? 'border-teal-500 bg-teal-50'
-                        : bloqueado
+                        : blocked
                         ? 'border-ink-100 bg-ink-50 opacity-50 cursor-not-allowed'
                         : 'border-ink-100 hover:bg-ink-50'
                     }`}
                   >
-                    <span className="text-base">{p.imagen}</span>
+                    <span className="text-base">{p.image}</span>
                     <span className="text-xs font-medium text-ink-900 truncate">
-                      {p.nombre}
-                      {bloqueado && <span className="block text-[10px] text-ink-400">Ya en otra promoción</span>}
+                      {p.name}
+                      {blocked && <span className="block text-[10px] text-ink-400">Ya en otra promoción</span>}
                     </span>
-                    {activo && <XIcon size={13} className="text-teal-600 ml-auto shrink-0" />}
+                    {active && <XIcon size={13} className="text-teal-600 ml-auto shrink-0" />}
                   </button>
                 )
               })}
             </div>
-            {errorPromo && <p className="text-xs text-danger-600 mt-1.5">{errorPromo}</p>}
+            {promoError && <p className="text-xs text-danger-600 mt-1.5">{promoError}</p>}
           </Field>
 
           <Field label="Imagen de la promoción">
             <div className="flex items-center gap-3">
-              {isImagenArchivo(promoForm.imagen) ? (
-                <img src={promoForm.imagen} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
+              {isImageFile(promoForm.image) ? (
+                <img src={promoForm.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
               ) : (
-                <span className="text-3xl">{promoForm.imagen}</span>
+                <span className="text-3xl">{promoForm.image}</span>
               )}
               <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
                 <Upload size={15} />
                 Subir imagen
-                <input type="file" accept="image/*" className="hidden" onChange={handleImagenPromoFile} />
+                <input type="file" accept="image/*" className="hidden" onChange={handlePromoImageFile} />
               </label>
             </div>
           </Field>
@@ -916,23 +916,23 @@ export default function Menu() {
             <Field label="Descuento (%)">
               <Input
                 type="number"
-                value={promoForm.descuento}
-                onChange={(e) => setPromoForm({ ...promoForm, descuento: e.target.value })}
+                value={promoForm.discount}
+                onChange={(e) => setPromoForm({ ...promoForm, discount: e.target.value })}
                 placeholder="0"
               />
             </Field>
             <Field label="Inicio">
               <Input
                 type="date"
-                value={promoForm.vigenciaInicio}
-                onChange={(e) => setPromoForm({ ...promoForm, vigenciaInicio: e.target.value })}
+                value={promoForm.startDate}
+                onChange={(e) => setPromoForm({ ...promoForm, startDate: e.target.value })}
               />
             </Field>
             <Field label="Fin">
               <Input
                 type="date"
-                value={promoForm.vigenciaFin}
-                onChange={(e) => setPromoForm({ ...promoForm, vigenciaFin: e.target.value })}
+                value={promoForm.endDate}
+                onChange={(e) => setPromoForm({ ...promoForm, endDate: e.target.value })}
               />
             </Field>
           </div>
@@ -945,71 +945,71 @@ export default function Menu() {
         </form>
       </Modal>
 
-      {/* Modal nuevo/editar platillo del Menú Mensual: entidad separada del Catálogo de Productos */}
+      {/* New/edit Monthly Menu dish modal: entity separate from the Products catalog */}
       <Modal
-        open={platilloModalOpen}
-        onClose={() => setPlatilloModalOpen(false)}
-        title={editingPlatilloId ? 'Editar platillo' : 'Nuevo platillo del Menú Mensual'}
+        open={dishModalOpen}
+        onClose={() => setDishModalOpen(false)}
+        title={editingDishId ? 'Editar platillo' : 'Nuevo platillo del Menú Mensual'}
         footer={
           <>
-            <Button variant="outline" onClick={() => setPlatilloModalOpen(false)}>
+            <Button variant="outline" onClick={() => setDishModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSavePlatillo}>
-              {editingPlatilloId ? 'Guardar cambios' : 'Crear platillo'}
+            <Button onClick={handleSaveDish}>
+              {editingDishId ? 'Guardar cambios' : 'Crear platillo'}
             </Button>
           </>
         }
       >
-        <form onSubmit={handleSavePlatillo}>
+        <form onSubmit={handleSaveDish}>
           <Field label="Nombre del platillo">
             <Input
-              value={platilloForm.nombre}
-              onChange={(e) => actualizarCampoPlatillo('nombre', e.target.value)}
+              value={dishForm.name}
+              onChange={(e) => updateDishField('name', e.target.value)}
               placeholder="Ej. Almuerzo Ejecutivo"
             />
-            {erroresPlatillo.nombre && <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.nombre}</p>}
+            {dishErrors.name && <p className="text-xs text-danger-600 mt-1.5">{dishErrors.name}</p>}
           </Field>
 
           <Field label="Descripción" >
             <Textarea
-              value={platilloForm.descripcion}
-              onChange={(e) => actualizarCampoPlatillo('descripcion', e.target.value)}
+              value={dishForm.description}
+              onChange={(e) => updateDishField('description', e.target.value)}
               placeholder="Breve descripción del platillo..."
             />
-            {erroresPlatillo.descripcion && (
-              <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.descripcion}</p>
+            {dishErrors.description && (
+              <p className="text-xs text-danger-600 mt-1.5">{dishErrors.description}</p>
             )}
           </Field>
 
           <Field label="Imagen del platillo">
             <div className="flex items-center gap-3">
-              {isImagenArchivo(platilloForm.imagen) ? (
-                <img src={platilloForm.imagen} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
+              {isImageFile(dishForm.image) ? (
+                <img src={dishForm.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
               ) : (
-                <span className="text-3xl">{platilloForm.imagen}</span>
+                <span className="text-3xl">{dishForm.image}</span>
               )}
               <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
                 <Upload size={15} />
                 Subir imagen
-                <input type="file" accept="image/*" className="hidden" onChange={handleImagenPlatilloFile} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleDishImageFile} />
               </label>
             </div>
-            {erroresPlatillo.imagen && <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.imagen}</p>}
+            {dishErrors.image && <p className="text-xs text-danger-600 mt-1.5">{dishErrors.image}</p>}
           </Field>
 
           <Field
             label="Ingredientes (obligatorio)"
             hint="Busca en el catálogo o agrega uno nuevo. Requerido para validar alérgenos, ya que este platillo se prepara bajo demanda según el conteo de preórdenes del día."
           >
-            <IngredientesInput
-              value={platilloForm.ingredientes}
-              catalogo={catalogoIngredientes}
-              onChange={(nuevos) => actualizarCampoPlatillo('ingredientes', nuevos)}
-              onNuevoIngrediente={agregarACatalogoIngredientes}
+            <IngredientsInput
+              value={dishForm.ingredients}
+              catalog={ingredientsCatalog}
+              onChange={(newIngredients) => updateDishField('ingredients', newIngredients)}
+              onNewIngredient={addToIngredientsCatalog}
             />
-            {erroresPlatillo.ingredientes && (
-              <p className="text-xs text-danger-600 mt-1.5">{erroresPlatillo.ingredientes}</p>
+            {dishErrors.ingredients && (
+              <p className="text-xs text-danger-600 mt-1.5">{dishErrors.ingredients}</p>
             )}
           </Field>
         </form>

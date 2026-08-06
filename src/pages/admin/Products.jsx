@@ -6,72 +6,72 @@ import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import { Field, Input, Select, Textarea } from '../../components/ui/Field'
-import IngredientesInput from '../../components/admin/IngredientesInput'
+import IngredientsInput from '../../components/admin/IngredientsInput'
 import {
-  productos as productosIniciales,
-  categorias,
-  catalogoIngredientes as catalogoIngredientesInicial,
+  products as initialProducts,
+  categories,
+  ingredientsCatalog as initialIngredientsCatalog,
 } from '../../data/mockData'
-import { usePromociones, promoActivaDe } from '../../context/PromocionesContext'
+import { usePromotions, activePromoFor } from '../../context/PromotionsContext'
 
 const emptyForm = {
-  nombre: '',
-  descripcion: '',
-  categoria: categorias[0],
-  precio: '',
+  name: '',
+  description: '',
+  category: categories[0],
+  price: '',
   stock: '',
-  ingredientes: [],
-  imagen: '🍴',
+  ingredients: [],
+  image: '🍴',
 }
 
-function isImagenArchivo(imagen) {
-  return typeof imagen === 'string' && imagen.startsWith('data:')
+function isImageFile(image) {
+  return typeof image === 'string' && image.startsWith('data:')
 }
 
-function validar(form) {
-  const errores = {}
-  if (!form.nombre.trim()) errores.nombre = 'El nombre del producto es obligatorio.'
-  if (!form.descripcion.trim()) errores.descripcion = 'La descripción es obligatoria.'
-  if (form.precio === '' || Number(form.precio) <= 0) errores.precio = 'Ingresa un precio válido.'
-  if (form.stock === '' || Number(form.stock) < 0) errores.stock = 'Ingresa el stock disponible.'
-  if (!form.imagen) errores.imagen = 'Selecciona o sube una imagen para el producto.'
-  if (form.ingredientes.length === 0) errores.ingredientes = 'Debes declarar los ingredientes para validar alérgenos'
-  return errores
+function validate(form) {
+  const errors = {}
+  if (!form.name.trim()) errors.name = 'El nombre del producto es obligatorio.'
+  if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
+  if (form.price === '' || Number(form.price) <= 0) errors.price = 'Ingresa un precio válido.'
+  if (form.stock === '' || Number(form.stock) < 0) errors.stock = 'Ingresa el stock disponible.'
+  if (!form.image) errors.image = 'Selecciona o sube una imagen para el producto.'
+  if (form.ingredients.length === 0) errors.ingredients = 'Debes declarar los ingredientes para validar alérgenos'
+  return errors
 }
 
-export default function Productos() {
-  const { promociones } = usePromociones()
-  const [items, setItems] = useState(productosIniciales)
+export default function Products() {
+  const { promotions } = usePromotions()
+  const [items, setItems] = useState(initialProducts)
   const [query, setQuery] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState(emptyForm)
-  const [errores, setErrores] = useState({})
-  const [catalogoIngredientes, setCatalogoIngredientes] = useState(catalogoIngredientesInicial)
+  const [errors, setErrors] = useState({})
+  const [ingredientsCatalog, setIngredientsCatalog] = useState(initialIngredientsCatalog)
 
-  function agregarACatalogo(nuevo) {
-    setCatalogoIngredientes((prev) =>
-      prev.some((i) => i.toLowerCase() === nuevo.toLowerCase())
+  function addToCatalog(newIngredient) {
+    setIngredientsCatalog((prev) =>
+      prev.some((i) => i.toLowerCase() === newIngredient.toLowerCase())
         ? prev
-        : [...prev, nuevo].sort((a, b) => a.localeCompare(b, 'es'))
+        : [...prev, newIngredient].sort((a, b) => a.localeCompare(b, 'es'))
     )
   }
 
   const filtered = useMemo(
-    () => items.filter((p) => p.nombre.toLowerCase().includes(query.toLowerCase())),
+    () => items.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())),
     [items, query]
   )
 
-  function actualizarCampo(campo, valor) {
-    setForm((prev) => ({ ...prev, [campo]: valor }))
-    setErrores((prev) => ({ ...prev, [campo]: undefined }))
+  function updateField(field, value) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
   }
 
   function openNew() {
     setEditingId(null)
     setForm(emptyForm)
-    setErrores({})
+    setErrors({})
     setModalOpen(true)
   }
 
@@ -79,35 +79,35 @@ export default function Productos() {
     setEditingId(p.id)
     setForm({
       ...p,
-      precio: String(p.precio),
+      price: String(p.price),
       stock: String(p.stock),
-      ingredientes: [...p.ingredientes],
+      ingredients: [...p.ingredients],
     })
-    setErrores({})
+    setErrors({})
     setModalOpen(true)
   }
 
-  function handleImagenFile(e) {
+  function handleImageFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => actualizarCampo('imagen', reader.result)
+    reader.onload = () => updateField('image', reader.result)
     reader.readAsDataURL(file)
   }
 
   function handleSave(e) {
     e.preventDefault()
-    const erroresValidacion = validar(form)
-    if (Object.keys(erroresValidacion).length > 0) {
-      setErrores(erroresValidacion)
+    const validationErrors = validate(form)
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
       return
     }
 
     const payload = {
       ...form,
-      precio: Number(form.precio) || 0,
+      price: Number(form.price) || 0,
       stock: Number(form.stock) || 0,
-      estado: Number(form.stock) > 0 ? 'Activo' : 'Agotado',
+      status: Number(form.stock) > 0 ? 'Activo' : 'Agotado',
     }
 
     if (editingId) {
@@ -165,50 +165,50 @@ export default function Productos() {
               </thead>
               <tbody>
                 {filtered.map((p) => {
-                  const oculto = p.stock <= 0
-                  const promo = promoActivaDe(p.id, promociones)
-                  const precioConDescuento = promo ? p.precio * (1 - promo.descuento / 100) : null
+                  const hidden = p.stock <= 0
+                  const promo = activePromoFor(p.id, promotions)
+                  const discountedPrice = promo ? p.price * (1 - promo.discount / 100) : null
                   return (
                     <tr
                       key={p.id}
                       className={`border-b border-ink-100 last:border-0 hover:bg-ink-50/60 transition-opacity ${
-                        oculto ? 'opacity-50' : ''
+                        hidden ? 'opacity-50' : ''
                       }`}
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
-                          {isImagenArchivo(p.imagen) ? (
+                          {isImageFile(p.image) ? (
                             <img
-                              src={p.imagen}
-                              alt={p.nombre}
-                              className={`w-8 h-8 rounded-lg object-cover ${oculto ? 'grayscale' : ''}`}
+                              src={p.image}
+                              alt={p.name}
+                              className={`w-8 h-8 rounded-lg object-cover ${hidden ? 'grayscale' : ''}`}
                             />
                           ) : (
-                            <span className={`text-xl ${oculto ? 'grayscale' : ''}`}>{p.imagen}</span>
+                            <span className={`text-xl ${hidden ? 'grayscale' : ''}`}>{p.image}</span>
                           )}
                           <div>
-                            <p className="font-medium text-ink-900">{p.nombre}</p>
-                            {p.descripcion && (
-                              <p className="text-xs text-ink-400 line-clamp-1">{p.descripcion}</p>
+                            <p className="font-medium text-ink-900">{p.name}</p>
+                            {p.description && (
+                              <p className="text-xs text-ink-400 line-clamp-1">{p.description}</p>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-ink-500">{p.categoria}</td>
+                      <td className="px-5 py-3 text-ink-500">{p.category}</td>
                       <td className="px-5 py-3">
                         {promo ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-ink-300 line-through text-xs">${p.precio.toFixed(2)}</span>
-                            <span className="text-teal-700 font-semibold">${precioConDescuento.toFixed(2)}</span>
-                            <Badge tone="success">-{promo.descuento}%</Badge>
+                            <span className="text-ink-300 line-through text-xs">${p.price.toFixed(2)}</span>
+                            <span className="text-teal-700 font-semibold">${discountedPrice.toFixed(2)}</span>
+                            <Badge tone="success">-{promo.discount}%</Badge>
                           </div>
                         ) : (
-                          <span className="text-ink-700 font-medium">${p.precio.toFixed(2)}</span>
+                          <span className="text-ink-700 font-medium">${p.price.toFixed(2)}</span>
                         )}
                       </td>
                       <td className="px-5 py-3 text-ink-700">{p.stock} u.</td>
                       <td className="px-5 py-3">
-                        {oculto ? (
+                        {hidden ? (
                           <Badge tone="danger">
                             <EyeOff size={11} />
                             Oculto · sin stock
@@ -249,7 +249,7 @@ export default function Productos() {
         </Card>
       </main>
 
-      {/* Modal producto */}
+      {/* Product modal */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -267,15 +267,15 @@ export default function Productos() {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Nombre del producto">
               <Input
-                value={form.nombre}
-                onChange={(e) => actualizarCampo('nombre', e.target.value)}
+                value={form.name}
+                onChange={(e) => updateField('name', e.target.value)}
                 placeholder="Ej. Sandwich de Pollo"
               />
-              {errores.nombre && <p className="text-xs text-danger-600 mt-1.5">{errores.nombre}</p>}
+              {errors.name && <p className="text-xs text-danger-600 mt-1.5">{errors.name}</p>}
             </Field>
             <Field label="Categoría">
-              <Select value={form.categoria} onChange={(e) => actualizarCampo('categoria', e.target.value)}>
-                {categorias.map((c) => (
+              <Select value={form.category} onChange={(e) => updateField('category', e.target.value)}>
+                {categories.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
@@ -286,56 +286,56 @@ export default function Productos() {
               <Input
                 type="number"
                 step="0.1"
-                value={form.precio}
-                onChange={(e) => actualizarCampo('precio', e.target.value)}
+                value={form.price}
+                onChange={(e) => updateField('price', e.target.value)}
                 placeholder="0.00"
               />
-              {errores.precio && <p className="text-xs text-danger-600 mt-1.5">{errores.precio}</p>}
+              {errors.price && <p className="text-xs text-danger-600 mt-1.5">{errors.price}</p>}
             </Field>
             <Field label="Stock disponible">
               <Input
                 type="number"
                 value={form.stock}
-                onChange={(e) => actualizarCampo('stock', e.target.value)}
+                onChange={(e) => updateField('stock', e.target.value)}
                 placeholder="0"
               />
-              {errores.stock && <p className="text-xs text-danger-600 mt-1.5">{errores.stock}</p>}
+              {errors.stock && <p className="text-xs text-danger-600 mt-1.5">{errors.stock}</p>}
             </Field>
           </div>
 
           <Field label="Imagen del producto">
             <div className="flex items-center gap-3">
-              {isImagenArchivo(form.imagen) ? (
-                <img src={form.imagen} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
+              {isImageFile(form.image) ? (
+                <img src={form.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
               ) : (
-                <span className="text-3xl">{form.imagen}</span>
+                <span className="text-3xl">{form.image}</span>
               )}
               <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
                 <Upload size={15} />
                 Subir imagen
-                <input type="file" accept="image/*" className="hidden" onChange={handleImagenFile} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageFile} />
               </label>
             </div>
-            {errores.imagen && <p className="text-xs text-danger-600 mt-1.5">{errores.imagen}</p>}
+            {errors.image && <p className="text-xs text-danger-600 mt-1.5">{errors.image}</p>}
           </Field>
 
           <Field label="Descripción">
             <Textarea
-              value={form.descripcion}
-              onChange={(e) => actualizarCampo('descripcion', e.target.value)}
+              value={form.description}
+              onChange={(e) => updateField('description', e.target.value)}
               placeholder="Breve descripción del producto..."
             />
-            {errores.descripcion && <p className="text-xs text-danger-600 mt-1.5">{errores.descripcion}</p>}
+            {errors.description && <p className="text-xs text-danger-600 mt-1.5">{errors.description}</p>}
           </Field>
 
           <Field label="Ingredientes (obligatorio)" hint="Busca en el catálogo o agrega uno nuevo. Requerido para validar alérgenos en el POS.">
-            <IngredientesInput
-              value={form.ingredientes}
-              catalogo={catalogoIngredientes}
-              onChange={(nuevos) => actualizarCampo('ingredientes', nuevos)}
-              onNuevoIngrediente={agregarACatalogo}
+            <IngredientsInput
+              value={form.ingredients}
+              catalog={ingredientsCatalog}
+              onChange={(newIngredients) => updateField('ingredients', newIngredients)}
+              onNewIngredient={addToCatalog}
             />
-            {errores.ingredientes && <p className="text-xs text-danger-600 mt-1.5">{errores.ingredientes}</p>}
+            {errors.ingredients && <p className="text-xs text-danger-600 mt-1.5">{errors.ingredients}</p>}
           </Field>
         </form>
       </Modal>

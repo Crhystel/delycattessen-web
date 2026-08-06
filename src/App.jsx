@@ -1,21 +1,21 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { InstitucionProvider } from "./context/InstitucionContext";
-import { PromocionesProvider } from "./context/PromocionesContext";
+import { InstitutionProvider } from "./context/InstitutionContext";
+import { PromotionsProvider } from "./context/PromotionsContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
-import Usuarios from "./pages/admin/Usuarios";
-import Productos from "./pages/admin/Productos";
+import Users from "./pages/admin/Users";
+import Products from "./pages/admin/Products";
 import Menu from "./pages/admin/Menu";
-import ReporteDocentes from "./pages/admin/ReporteDocentes";
+import TeacherConsumptionReport from "./pages/admin/TeacherConsumptionReport";
 
 export default function App() {
   return (
     <AuthProvider>
-      <InstitucionProvider>
-        <PromocionesProvider>
+      <InstitutionProvider>
+        <PromotionsProvider>
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Login />} />
@@ -29,16 +29,16 @@ export default function App() {
               >
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="usuarios" element={<Usuarios />} />
-                <Route path="productos" element={<Productos />} />
+                <Route path="users" element={<Users />} />
+                <Route path="products" element={<Products />} />
                 <Route path="menu" element={<Menu />} />
-                <Route path="docentes" element={<ReporteDocentes />} />
+                <Route path="teachers" element={<TeacherConsumptionReport />} />
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
-        </PromocionesProvider>
-      </InstitucionProvider>
+        </PromotionsProvider>
+      </InstitutionProvider>
     </AuthProvider>
   );
 }

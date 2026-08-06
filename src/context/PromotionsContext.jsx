@@ -1,50 +1,50 @@
 import { createContext, useContext, useState } from 'react'
-import { promociones as promocionesIniciales } from '../data/mockData'
+import { promotions as initialPromotions } from '../data/mockData'
 
-export const HOY = new Date('2026-07-06')
+export const TODAY = new Date('2026-07-06')
 
 export function pad2(n) {
   return String(n).padStart(2, '0')
 }
 
-// HOY se construye a partir de un string ISO (medianoche UTC); usamos
-// getters UTC para no correr la fecha un día según el huso horario del navegador.
-export function formatFechaISO(date) {
+// TODAY is built from an ISO string (UTC midnight); we use UTC getters so
+// the date doesn't shift a day depending on the browser's timezone.
+export function formatDateISO(date) {
   return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`
 }
 
-export function sumarDias(date, dias) {
-  const copia = new Date(date)
-  copia.setUTCDate(copia.getUTCDate() + dias)
-  return copia
+export function addDays(date, days) {
+  const copy = new Date(date)
+  copy.setUTCDate(copy.getUTCDate() + days)
+  return copy
 }
 
-// Al vencer vigenciaFin, la promoción pasa a "Vencida" automáticamente: no
-// se guarda un estado manual en ningún lado, se deriva siempre de la fecha.
-export function calcularEstadoPromo(promo) {
-  return new Date(promo.vigenciaFin) < HOY ? 'Vencida' : 'Activa'
+// Once endDate passes, the promotion automatically becomes "Vencida": no
+// manual status is stored anywhere, it's always derived from the date.
+export function calculatePromoStatus(promo) {
+  return new Date(promo.endDate) < TODAY ? 'Vencida' : 'Activa'
 }
 
-export function promoActivaDe(productoId, promociones, excludeId) {
-  return promociones.find(
-    (p) => p.id !== excludeId && p.productos.includes(productoId) && calcularEstadoPromo(p) === 'Activa'
+export function activePromoFor(productId, promotions, excludeId) {
+  return promotions.find(
+    (p) => p.id !== excludeId && p.products.includes(productId) && calculatePromoStatus(p) === 'Activa'
   )
 }
 
-const PromocionesContext = createContext(null)
+const PromotionsContext = createContext(null)
 
-export function PromocionesProvider({ children }) {
-  const [promociones, setPromociones] = useState(promocionesIniciales)
+export function PromotionsProvider({ children }) {
+  const [promotions, setPromotions] = useState(initialPromotions)
 
   return (
-    <PromocionesContext.Provider value={{ promociones, setPromociones }}>
+    <PromotionsContext.Provider value={{ promotions, setPromotions }}>
       {children}
-    </PromocionesContext.Provider>
+    </PromotionsContext.Provider>
   )
 }
 
-export function usePromociones() {
-  const ctx = useContext(PromocionesContext)
-  if (!ctx) throw new Error('usePromociones debe usarse dentro de PromocionesProvider')
+export function usePromotions() {
+  const ctx = useContext(PromotionsContext)
+  if (!ctx) throw new Error('usePromotions must be used within PromotionsProvider')
   return ctx
 }
