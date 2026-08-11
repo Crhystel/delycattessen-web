@@ -4,11 +4,13 @@ import { ChefHat } from "lucide-react";
 import Button from "../components/ui/Button";
 import { Field, Input } from "../components/ui/Field";
 import { useAuth } from "../context/AuthContext";
+import ForgotPasswordModal from "../components/auth/ForgotPasswordModal";
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, sessionExpired, clearSessionExpired } = useAuth();
   const [email, setEmail] = useState("");
+  const [modalRecuperar, setModalRecuperar] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,7 +113,8 @@ export default function Login() {
           <div className="flex justify-end -mt-3 mb-4">
             <button
               type="button"
-              className="text-xs font-medium text-teal-600 hover:text-teal-700"
+              onClick={() => setModalRecuperar(true)}
+              className="text-xs front-medium text-teal-600 hover:text-teal-700"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -126,6 +129,10 @@ export default function Login() {
             {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
           </Button>
         </form>
+        <ForgotPasswordModal
+          open={modalRecuperar}
+          onClose={() => setModalRecuperar(false)}
+        />
       </div>
     </div>
   );
