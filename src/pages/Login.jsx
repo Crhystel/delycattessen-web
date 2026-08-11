@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import { Field, Input } from "../components/ui/Field";
 import { useAuth } from "../context/AuthContext";
 import ForgotPasswordModal from "../components/auth/ForgotPasswordModal";
+import PasswordInput from "../components/ui/PasswordInput";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -101,11 +102,10 @@ export default function Login() {
           </Field>
 
           <Field label="Contraseña">
-            <Input
-              type="password"
-              placeholder="••••••••"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               required
             />
           </Field>

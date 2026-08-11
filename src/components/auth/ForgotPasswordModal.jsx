@@ -3,15 +3,18 @@ import { Info } from "lucide-react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import { Field, Input } from "../ui/Field";
+import CodeInput from "../ui/CodeInput";
 import {
   requestPasswordReset,
   confirmPasswordReset,
 } from "../../services/authService";
+import PasswordInput from "../ui/PasswordInput";
 
 export default function ForgotPasswordModal({ open, onClose }) {
   const [paso, setPaso] = useState(1);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
@@ -47,7 +50,7 @@ export default function ForgotPasswordModal({ open, onClose }) {
     setEnviando(true);
     setError("");
     try {
-      await confirmPasswordReset(email, token, newPassword);
+      await confirmPasswordReset(email, token, newPassword, confirmPassword);
       setPaso(3);
     } catch (err) {
       setError(err.message || "No se pudo restablecer la contraseña.");
@@ -114,25 +117,31 @@ export default function ForgotPasswordModal({ open, onClose }) {
             </div>
           )}
           <Field label="Código de verificación">
-            <Input
-              value={token}
-              onChange={(e) => {
-                setToken(e.target.value);
-                setError("");
-              }}
-              placeholder="Pega aquí el código recibido"
-              required
-            />
+            <div className="flex justify-center">
+              <CodeInput
+                value={token}
+                onChange={(val) => {
+                  setToken(val);
+                  setError("");
+                }}
+              />
+            </div>
           </Field>
           <Field label="Nueva contraseña">
-            <Input
-              type="password"
+            <PasswordInput
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="••••••••"
               required
             />
-            {error && <p className="text-xs text-danger-600 mt-1.5">{error}</p>}
+          </Field>
+          <Field label="Confirmar nueva contraseña">
+            <PasswordInput
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+            />
           </Field>
         </form>
       )}

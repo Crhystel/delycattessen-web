@@ -16,9 +16,19 @@ export async function requestPasswordReset(email) {
     body: { email },
   });
 }
-export async function confirmPasswordReset(email, token, newPassword) {
+export async function confirmPasswordReset(
+  email,
+  code,
+  newPassword,
+  confirmPassword,
+) {
   return apiClient("/usuarios/password-reset/confirm/", {
     method: "POST",
-    body: { email, token, new_password: newPassword },
+    body: {
+      email,
+      code,
+      new_password: newPassword,
+      confirm_password: confirmPassword,
+    },
   });
 }
