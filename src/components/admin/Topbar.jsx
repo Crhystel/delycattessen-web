@@ -24,8 +24,8 @@ export default function Topbar({ title, subtitle }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function seleccionar(valor) {
-    setSelectedInstitution(valor);
+  function selectInstitution(value) {
+    setSelectedInstitution(value);
     setOpen(false);
   }
 
@@ -53,7 +53,7 @@ export default function Topbar({ title, subtitle }) {
             <div className="absolute right-0 mt-2 w-64 bg-white border border-ink-100 rounded-xl shadow-lg py-1.5 z-20">
               {ownInstitution && (
                 <button
-                  onClick={() => seleccionar(null)}
+                  onClick={() => selectInstitution(null)}
                   className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-ink-700 hover:bg-ink-50"
                 >
                   {ownInstitution.name}
@@ -64,7 +64,7 @@ export default function Topbar({ title, subtitle }) {
               )}
 
               <button
-                onClick={() => seleccionar(ALL_INSTITUTIONS)}
+                onClick={() => selectInstitution(ALL_INSTITUTIONS)}
                 className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-ink-700 hover:bg-ink-50"
               >
                 Todas las instituciones
@@ -80,7 +80,7 @@ export default function Topbar({ title, subtitle }) {
                 .map((inst) => (
                   <button
                     key={inst.id}
-                    onClick={() => seleccionar(inst.id)}
+                    onClick={() => selectInstitution(inst.id)}
                     className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-ink-700 hover:bg-ink-50"
                   >
                     {inst.name}

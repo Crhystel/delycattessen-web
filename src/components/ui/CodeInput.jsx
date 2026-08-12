@@ -3,50 +3,50 @@ import { useRef } from "react";
 export default function CodeInput({ value, onChange, length = 6 }) {
   const inputsRef = useRef([]);
 
-  function actualizarDigito(index, digito) {
+  function updateDigit(index, digit) {
     const chars = value.split("");
-    chars[index] = digito;
-    const nuevo = chars.join("").slice(0, length);
-    onChange(nuevo);
+    chars[index] = digit;
+    const updated = chars.join("").slice(0, length);
+    onChange(updated);
   }
 
   function handleChange(e, index) {
-    const raw = e.target.value.replace(/\D/g, ""); // solo dígitos
+    const raw = e.target.value.replace(/\D/g, ""); // digits only
 
     if (raw.length > 1) {
       handlePaste(raw, index);
       return;
     }
 
-    actualizarDigito(index, raw);
+    updateDigit(index, raw);
 
     if (raw && index < length - 1) {
       inputsRef.current[index + 1]?.focus();
     }
   }
 
-  function handlePaste(texto, indexInicial = 0) {
-    const digitos = texto.replace(/\D/g, "").slice(0, length - indexInicial);
-    if (!digitos) return;
+  function handlePaste(text, startIndex = 0) {
+    const digits = text.replace(/\D/g, "").slice(0, length - startIndex);
+    if (!digits) return;
 
     const chars = value.split("");
-    for (let i = 0; i < digitos.length; i++) {
-      chars[indexInicial + i] = digitos[i];
+    for (let i = 0; i < digits.length; i++) {
+      chars[startIndex + i] = digits[i];
     }
-    const nuevo = chars.join("").slice(0, length);
-    onChange(nuevo);
+    const updated = chars.join("").slice(0, length);
+    onChange(updated);
 
-    const siguienteIndex = Math.min(indexInicial + digitos.length, length - 1);
-    inputsRef.current[siguienteIndex]?.focus();
+    const nextIndex = Math.min(startIndex + digits.length, length - 1);
+    inputsRef.current[nextIndex]?.focus();
   }
 
   function handleKeyDown(e, index) {
     if (e.key === "Backspace") {
       if (value[index]) {
-        actualizarDigito(index, "");
+        updateDigit(index, "");
       } else if (index > 0) {
         inputsRef.current[index - 1]?.focus();
-        actualizarDigito(index - 1, "");
+        updateDigit(index - 1, "");
       }
     } else if (e.key === "ArrowLeft" && index > 0) {
       inputsRef.current[index - 1]?.focus();
@@ -57,8 +57,8 @@ export default function CodeInput({ value, onChange, length = 6 }) {
 
   function handlePasteEvent(e, index) {
     e.preventDefault();
-    const texto = e.clipboardData.getData("text");
-    handlePaste(texto, index);
+    const text = e.clipboardData.getData("text");
+    handlePaste(text, index);
   }
 
   return (

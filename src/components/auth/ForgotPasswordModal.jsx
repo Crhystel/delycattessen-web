@@ -11,74 +11,74 @@ import {
 import PasswordInput from "../ui/PasswordInput";
 
 export default function ForgotPasswordModal({ open, onClose }) {
-  const [paso, setPaso] = useState(1);
+  const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [enviando, setEnviando] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function resetYCerrar() {
-    setPaso(1);
+  function resetAndClose() {
+    setStep(1);
     setEmail("");
     setToken("");
     setNewPassword("");
-    setMensaje("");
+    setMessage("");
     setError("");
     onClose();
   }
 
-  async function handleSolicitar(e) {
+  async function handleRequest(e) {
     e.preventDefault();
-    setEnviando(true);
+    setSubmitting(true);
     setError("");
     try {
       const data = await requestPasswordReset(email);
-      setMensaje(data.mensaje);
-      setPaso(2);
+      setMessage(data.mensaje);
+      setStep(2);
     } catch (err) {
       setError(err.message || "No se pudo procesar la solicitud.");
     } finally {
-      setEnviando(false);
+      setSubmitting(false);
     }
   }
 
-  async function handleConfirmar(e) {
+  async function handleConfirm(e) {
     e.preventDefault();
-    setEnviando(true);
+    setSubmitting(true);
     setError("");
     try {
       await confirmPasswordReset(email, token, newPassword, confirmPassword);
-      setPaso(3);
+      setStep(3);
     } catch (err) {
       setError(err.message || "No se pudo restablecer la contraseña.");
     } finally {
-      setEnviando(false);
+      setSubmitting(false);
     }
   }
 
   return (
     <Modal
       open={open}
-      onClose={resetYCerrar}
+      onClose={resetAndClose}
       title="Recuperar contraseña"
       footer={
-        paso === 3 ? (
-          <Button onClick={resetYCerrar}>Iniciar sesión</Button>
+        step === 3 ? (
+          <Button onClick={resetAndClose}>Iniciar sesión</Button>
         ) : (
           <>
-            <Button variant="outline" onClick={resetYCerrar}>
+            <Button variant="outline" onClick={resetAndClose}>
               Cancelar
             </Button>
             <Button
-              onClick={paso === 1 ? handleSolicitar : handleConfirmar}
-              disabled={enviando}
+              onClick={step === 1 ? handleRequest : handleConfirm}
+              disabled={submitting}
             >
-              {enviando
+              {submitting
                 ? "Procesando..."
-                : paso === 1
+                : step === 1
                   ? "Enviar código"
                   : "Restablecer contraseña"}
             </Button>
@@ -86,8 +86,8 @@ export default function ForgotPasswordModal({ open, onClose }) {
         )
       }
     >
-      {paso === 1 && (
-        <form onSubmit={handleSolicitar}>
+      {step === 1 && (
+        <form onSubmit={handleRequest}>
           <p className="text-sm text-ink-500 mb-4">
             Ingresa tu correo. Si existe una cuenta activa, se generará un
             código de verificación.
@@ -108,12 +108,12 @@ export default function ForgotPasswordModal({ open, onClose }) {
         </form>
       )}
 
-      {paso === 2 && (
-        <form onSubmit={handleConfirmar}>
-          {mensaje && (
+      {step === 2 && (
+        <form onSubmit={handleConfirm}>
+          {message && (
             <div className="flex items-start gap-2.5 bg-teal-50 text-teal-700 text-xs rounded-xl px-3.5 py-3 mb-4">
               <Info size={16} className="shrink-0 mt-0.5" />
-              <p>{mensaje}</p>
+              <p>{message}</p>
             </div>
           )}
           <Field label="Código de verificación">
@@ -146,7 +146,7 @@ export default function ForgotPasswordModal({ open, onClose }) {
         </form>
       )}
 
-      {paso === 3 && (
+      {step === 3 && (
         <p className="text-sm text-ink-700">
           Tu contraseña se restableció exitosamente. Ya puedes iniciar sesión
           con tu nueva contraseña.
