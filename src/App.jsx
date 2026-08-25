@@ -11,6 +11,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/Users";
 import Products from "./pages/admin/Products";
+import ProductCreateView from "./views/admin/ProductCreateView";
 import Menu from "./pages/admin/Menu";
 import TeacherConsumptionReport from "./pages/admin/TeacherConsumptionReport";
 import ProductCreate from "./pages/admin/ProductCreate";
