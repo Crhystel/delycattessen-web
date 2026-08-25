@@ -3,15 +3,15 @@ import { apiClient } from "./apiClient";
 export async function login(email, password) {
   return apiClient("/token/", {
     method: "POST",
-    body: { email, password },
+    body: { username: email, password },
   });
 }
 
 export async function getMe(token) {
-  return apiClient("/usuarios/me/", { token });
+  return apiClient("/users/me/", { token });
 }
 export async function requestPasswordReset(email) {
-  return apiClient("/usuarios/password-reset/request/", {
+  return apiClient("/users/password-reset/request/", {
     method: "POST",
     body: { email },
   });
@@ -22,7 +22,7 @@ export async function confirmPasswordReset(
   newPassword,
   confirmPassword,
 ) {
-  return apiClient("/usuarios/password-reset/confirm/", {
+  return apiClient("/users/password-reset/confirm/", {
     method: "POST",
     body: {
       email,

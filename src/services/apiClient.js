@@ -16,7 +16,8 @@ class ApiClient {
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await this.parseBody(response);
-    if (!response.ok) return this.onError(response, data, { hadToken: !!token });
+    if (!response.ok)
+      return this.onError(response, data, { hadToken: !!token });
     return data;
   }
 
@@ -31,9 +32,21 @@ class ApiClient {
   }
 
   onError(response, data) {
-    throw new Error(
-      data?.detail || "Ocurrió un error al conectar con el servidor.",
-    );
+    throw new Error(this.extractErrorMessage(data));
+  }
+  extractErrorMessage(data) {
+    if (!data) return "Ocurrió un error al conectar con el servidor.";
+    if (data.detail) return data.detail;
+    if (data.message) return data.message;
+
+    // DRF validation errors come as { field: ["msg1", "msg2"] } or
+    // { non_field_errors: ["msg"] } — surface the first one found.
+    const firstKey = Object.keys(data)[0];
+    if (firstKey && Array.isArray(data[firstKey])) {
+      return data[firstKey][0];
+    }
+
+    return "Ocurrió un error al conectar con el servidor.";
   }
 }
 
