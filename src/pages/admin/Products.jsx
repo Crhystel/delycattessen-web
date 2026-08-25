@@ -178,7 +178,7 @@ export default function Products() {
       category: p.category || CATEGORIES[0],
       price: String(p.price),
       stock: String(p.stock),
-      ingredients: p.ingredients.map((id) => idToName.get(id)).filter(Boolean),
+      ingredients: p.ingredients.map((item) => typeof item === 'object' ? item.name : idToName.get(item)).filter(Boolean),
       image: p.image || null,
       imageFile: null,
     });
