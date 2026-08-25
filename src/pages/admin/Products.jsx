@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import { Plus, Pencil, Trash2, Search, Upload, EyeOff } from 'lucide-react'
 import Topbar from '../../components/admin/Topbar'
 import Card from '../../components/ui/Card'
@@ -41,8 +43,17 @@ function validate(form) {
 
 export default function Products() {
   const { promotions } = usePromotions()
-  const [items, setItems] = useState(initialProducts)
+  const [items, setItems] = useState([])
   const [query, setQuery] = useState('')
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    axios.get('http://127.0.0.1:8000/api/catalog/menu/', { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` } })
+      .then(res => setItems(res.data))
+      .catch(err => console.error(err));
+  }, []);
+
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -69,10 +80,7 @@ export default function Products() {
   }
 
   function openNew() {
-    setEditingId(null)
-    setForm(emptyForm)
-    setErrors({})
-    setModalOpen(true)
+    navigate('/admin/products/create')
   }
 
   function openEdit(p) {
