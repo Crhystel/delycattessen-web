@@ -29,6 +29,7 @@ import {
   updateStaff,
   deleteStaff,
 } from "../../services/staffService";
+import { useToast } from "../../context/ToastContext";
 
 const TABS = [
   {
@@ -102,6 +103,7 @@ function CredentialsPanel({ email, password }) {
 
 export default function Users() {
   const { token } = useAuth();
+  const toast = useToast();
   const { selectedInstitution, institutions } = useInstitution();
 
   const [tab, setTab] = useState("TEACHER");
@@ -167,9 +169,15 @@ export default function Users() {
         email: data.email,
         password: data.temporary_password,
       });
+      toast.success(
+        "Cuenta creada",
+        `${fullName(createForm)} fue registrado correctamente.`,
+      );
       loadStaff();
     } catch (err) {
-      setCreateError(err.message || "No se pudo crear la cuenta.");
+      const message = err.message || "No se pudo crear la cuenta.";
+      setCreateError(message);
+      toast.error("No se pudo crear la cuenta", message);
     } finally {
       setCreating(false);
     }
@@ -200,10 +208,16 @@ export default function Users() {
     setEditError("");
     try {
       await updateStaff(token, editModal.id, editForm);
+      toast.success(
+        "Cambios guardados",
+        `Se actualizó la información de ${fullName(editForm)}.`,
+      );
       setEditModal(null);
       loadStaff();
     } catch (err) {
-      setEditError(err.message || "No se pudo guardar los cambios.");
+      const message = err.message || "No se pudo guardar los cambios.";
+      setEditError(message);
+      toast.error("No se pudo guardar", message);
     } finally {
       setSavingEdit(false);
     }
@@ -211,12 +225,18 @@ export default function Users() {
 
   async function toggleStatus(staffMember) {
     try {
-      await updateStaff(token, staffMember.id, {
-        is_active: !staffMember.is_active,
-      });
+      const nextActive = !staffMember.is_active;
+      await updateStaff(token, staffMember.id, { is_active: nextActive });
+      toast.success(
+        nextActive ? "Cuenta activada" : "Cuenta desactivada",
+        `${fullName(staffMember)} ahora está ${nextActive ? "activo" : "inactivo"}.`,
+      );
       loadStaff();
-    } catch {
-      setLoadError("No se pudo actualizar el estado de la cuenta.");
+    } catch (err) {
+      toast.error(
+        "No se pudo actualizar el estado",
+        err.message || "Intenta de nuevo.",
+      );
     }
   }
 
@@ -228,10 +248,11 @@ export default function Users() {
     setDeleting(true);
     try {
       await deleteStaff(token, deleteModal.id);
+      toast.success("Personal eliminado", `${name} se eliminó correctamente.`);
       setDeleteModal(null);
       loadStaff();
     } catch (err) {
-      setLoadError(err.message || "No se pudo eliminar la cuenta.");
+      toast.error("No se pudo eliminar", err.message || "Intenta de nuevo.");
     } finally {
       setDeleting(false);
     }
