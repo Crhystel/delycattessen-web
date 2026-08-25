@@ -337,7 +337,7 @@ export default function Products() {
                                 <img
                                   src={p.image}
                                   alt={p.name}
-                                  className={`w-8 h-8 rounded-lg object-cover cursor-zoom-in hover:opacity-80 transition-opacity ${hidden ? "grayscale" : ""}`}
+                                  className={`w-16 h-12 rounded-lg object-cover cursor-zoom-in hover:opacity-80 transition-opacity ${hidden ? "grayscale" : ""}`}
                                 />
                               </button>
                             ) : (
@@ -503,7 +503,7 @@ export default function Products() {
                   <img
                     src={form.image}
                     alt=""
-                    className="w-12 h-12 rounded-lg object-cover border border-ink-100 cursor-zoom-in hover:opacity-80 transition-opacity"
+                    className="w-24 h-[72px] rounded-lg object-cover border border-ink-100 cursor-zoom-in hover:opacity-80 transition-opacity"
                   />
                 </button>
               ) : (
