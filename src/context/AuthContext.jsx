@@ -5,7 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
-import { login as loginRequest } from "../services/authService";
+import { login as loginRequest, getMe } from "../services/authService";
 import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
 
 const AuthContext = createContext(null);
@@ -14,16 +14,31 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() =>
     localStorage.getItem("access_token"),
   );
+  const [role, setRole] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     setToken(null);
+    setRole(null);
   }, []);
 
-  // apiClient has no direct reference to this context; it signals through
-  // the event bus whenever a request comes back 401 with an expired token.
+  // On mount, if a token is already stored (page reload, or returning
+  // visitor), fetch the user's role so permission checks like IsAdmin
+  // work right away instead of defaulting to "not admin" until login.
+  useEffect(() => {
+    if (!token) {
+      setIsLoadingUser(false);
+      return;
+    }
+    getMe(token)
+      .then((data) => setRole(data.role))
+      .catch(() => logout())
+      .finally(() => setIsLoadingUser(false));
+  }, [token, logout]);
+
   useEffect(() => {
     return authEvents.on(SESSION_EXPIRED, () => {
       setSessionExpired(true);
@@ -37,6 +52,10 @@ export function AuthProvider({ children }) {
     localStorage.setItem("refresh_token", data.refresh);
     setToken(data.access);
     setSessionExpired(false);
+
+    const me = await getMe(data.access);
+    setRole(me.role);
+
     return data;
   }
 
@@ -44,9 +63,11 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         token,
+        role,
         login,
         logout,
         isAuthenticated: !!token,
+        isLoadingUser,
         sessionExpired,
         clearSessionExpired: () => setSessionExpired(false),
       }}

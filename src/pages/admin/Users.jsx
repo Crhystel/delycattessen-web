@@ -129,14 +129,12 @@ export default function Users() {
     selectedInstitution === ALL_INSTITUTIONS
       ? "todas las instituciones"
       : selectedInstitution
-        ? institutions.find((i) => i.id === selectedInstitution)?.name ||
-          ""
+        ? institutions.find((i) => i.id === selectedInstitution)?.name || ""
         : "tu institución";
 
   const filteredList = staff.filter(
     (u) =>
-      u.role === tab &&
-      fullName(u).toLowerCase().includes(query.toLowerCase()),
+      u.role === tab && fullName(u).toLowerCase().includes(query.toLowerCase()),
   );
 
   // Create account (shared between both tabs)
@@ -167,7 +165,7 @@ export default function Users() {
       const data = await createStaff(token, { ...createForm, role: tab });
       setCreatedCredentials({
         email: data.email,
-        password: data.password_temporal,
+        password: data.temporary_password,
       });
       loadStaff();
     } catch (err) {
@@ -213,7 +211,9 @@ export default function Users() {
 
   async function toggleStatus(staffMember) {
     try {
-      await updateStaff(token, staffMember.id, { is_active: !staffMember.is_active });
+      await updateStaff(token, staffMember.id, {
+        is_active: !staffMember.is_active,
+      });
       loadStaff();
     } catch {
       setLoadError("No se pudo actualizar el estado de la cuenta.");
@@ -573,10 +573,8 @@ export default function Users() {
         {deleteModal && (
           <p className="text-sm text-ink-700">
             ¿Eliminar definitivamente a{" "}
-            <span className="font-semibold">
-              {fullName(deleteModal)}
-            </span>
-            ? Esta acción no se puede deshacer.
+            <span className="font-semibold">{fullName(deleteModal)}</span>? Esta
+            acción no se puede deshacer.
           </p>
         )}
       </Modal>

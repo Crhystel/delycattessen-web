@@ -12,3 +12,9 @@ export class IsAuthenticated extends BasePermission {
     return auth.isAuthenticated;
   }
 }
+
+export class IsAdmin extends BasePermission {
+  hasPermission(auth) {
+    return auth.isAuthenticated && auth.role === "ADMIN";
+  }
+}
