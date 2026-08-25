@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { Plus, Pencil, Trash2, Search, Upload, EyeOff } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Plus, Pencil, Trash2, Search, Upload, EyeOff, X } from "lucide-react";
 import Topbar from "../../components/admin/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
@@ -29,10 +30,11 @@ const emptyForm = {
   stock: "",
   ingredients: [],
   image: null,
+  imageFile: null,
 };
 
 function isImageFile(image) {
-  return typeof image === "string" && image.startsWith("data:");
+  return typeof image === "string" && image.length > 0;
 }
 
 function validate(form) {
@@ -48,6 +50,37 @@ function validate(form) {
     errors.ingredients =
       "Debes declarar los ingredientes para validar alérgenos";
   return errors;
+}
+
+function ImagePreviewOverlay({ image, onClose }) {
+  if (!image) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] bg-black/70 flex items-center justify-center p-6"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-w-2xl w-full"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-white hover:text-ink-200"
+        >
+          <X size={24} />
+        </button>
+        <p className="text-white text-sm font-medium mb-2">{image.name}</p>
+        <img
+          src={image.url}
+          alt={image.name}
+          className="w-full max-h-[75vh] object-contain rounded-lg"
+        />
+      </div>
+    </div>,
+    document.body,
+  );
 }
 
 export default function Products() {
@@ -66,6 +99,7 @@ export default function Products() {
   const [isSaving, setIsSaving] = useState(false);
   const [ingredientsCatalog, setIngredientsCatalog] = useState([]);
   const [ingredientMap, setIngredientMap] = useState(new Map()); // name -> id
+  const [previewImage, setPreviewImage] = useState(null); // { url, name } | null
 
   useEffect(() => {
     loadProducts();
@@ -146,6 +180,7 @@ export default function Products() {
       stock: String(p.stock),
       ingredients: p.ingredients.map((id) => idToName.get(id)).filter(Boolean),
       image: p.image || null,
+      imageFile: null,
     });
     setErrors({});
     setModalOpen(true);
@@ -154,6 +189,7 @@ export default function Products() {
   function handleImageFile(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    updateField("imageFile", file);
     const reader = new FileReader();
     reader.onload = () => updateField("image", reader.result);
     reader.readAsDataURL(file);
@@ -178,6 +214,7 @@ export default function Products() {
       price: Number(form.price) || 0,
       stock: Number(form.stock) || 0,
       ingredients: ingredientIds,
+      imageFile: form.imageFile,
     };
 
     setIsSaving(true);
@@ -287,11 +324,22 @@ export default function Products() {
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2.5">
                             {isImageFile(p.image) ? (
-                              <img
-                                src={p.image}
-                                alt={p.name}
-                                className={`w-8 h-8 rounded-lg object-cover ${hidden ? "grayscale" : ""}`}
-                              />
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPreviewImage({
+                                    url: p.image,
+                                    name: p.name,
+                                  })
+                                }
+                                className="shrink-0"
+                              >
+                                <img
+                                  src={p.image}
+                                  alt={p.name}
+                                  className={`w-8 h-8 rounded-lg object-cover cursor-zoom-in hover:opacity-80 transition-opacity ${hidden ? "grayscale" : ""}`}
+                                />
+                              </button>
                             ) : (
                               <span
                                 className={`text-xl ${hidden ? "grayscale" : ""}`}
@@ -442,11 +490,22 @@ export default function Products() {
           <Field label="Imagen del producto">
             <div className="flex items-center gap-3">
               {isImageFile(form.image) ? (
-                <img
-                  src={form.image}
-                  alt=""
-                  className="w-12 h-12 rounded-lg object-cover border border-ink-100"
-                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPreviewImage({
+                      url: form.image,
+                      name: form.name || "Vista previa",
+                    })
+                  }
+                  className="shrink-0"
+                >
+                  <img
+                    src={form.image}
+                    alt=""
+                    className="w-12 h-12 rounded-lg object-cover border border-ink-100 cursor-zoom-in hover:opacity-80 transition-opacity"
+                  />
+                </button>
               ) : (
                 <span className="text-3xl">🍴</span>
               )}
@@ -496,6 +555,11 @@ export default function Products() {
           </Field>
         </form>
       </Modal>
+
+      <ImagePreviewOverlay
+        image={previewImage}
+        onClose={() => setPreviewImage(null)}
+      />
     </>
   );
 }

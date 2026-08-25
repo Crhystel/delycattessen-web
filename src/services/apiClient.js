@@ -9,11 +9,14 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  async request(endpoint, { method = "GET", body, token } = {}) {
+  async request(
+    endpoint,
+    { method = "GET", body, token, isFormData = false } = {},
+  ) {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method,
-      headers: this.buildHeaders(token),
-      body: body ? JSON.stringify(body) : undefined,
+      headers: this.buildHeaders(token, isFormData),
+      body: isFormData ? body : body ? JSON.stringify(body) : undefined,
     });
     const data = await this.parseBody(response);
     if (!response.ok)
@@ -21,8 +24,8 @@ class ApiClient {
     return data;
   }
 
-  buildHeaders(token) {
-    const headers = { "Content-Type": "application/json" };
+  buildHeaders(token, isFormData) {
+    const headers = isFormData ? {} : { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
     return headers;
   }
