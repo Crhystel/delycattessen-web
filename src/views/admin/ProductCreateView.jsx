@@ -20,7 +20,7 @@ const ProductCreateView = () => {
   useEffect(() => {
     const fetchIngredients = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/catalog/ingredients/');
+        const response = await axios.get('http://127.0.0.1:8000/api/catalog/ingredients/', { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` } });
         setAvailableIngredients(response.data);
       } catch (error) {
         toast.error("Failed to load ingredients from server");
@@ -51,7 +51,7 @@ const ProductCreateView = () => {
 
     setIsLoading(true);
     try {
-      await axios.post('http://127.0.0.1:8000/api/catalog/menu/create/', formData);
+      await axios.post('http://127.0.0.1:8000/api/catalog/menu/create/', formData, { headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` } });
       toast.success('Product created successfully!');
       
       // Limpia el formulario

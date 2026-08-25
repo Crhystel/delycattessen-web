@@ -8,6 +8,7 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Users from "./pages/admin/Users";
 import Products from "./pages/admin/Products";
+import ProductCreateView from "./views/admin/ProductCreateView";
 import Menu from "./pages/admin/Menu";
 import TeacherConsumptionReport from "./pages/admin/TeacherConsumptionReport";
 
@@ -31,6 +32,7 @@ export default function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="users" element={<Users />} />
                 <Route path="products" element={<Products />} />
+                <Route path="products/create" element={<ProductCreateView />} />
                 <Route path="menu" element={<Menu />} />
                 <Route path="teachers" element={<TeacherConsumptionReport />} />
               </Route>
