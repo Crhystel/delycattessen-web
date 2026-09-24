@@ -15,6 +15,8 @@ import {
   getAdminProducts,
   getIngredients,
   createIngredient,
+  updateIngredient,
+  getAllergens,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -29,8 +31,8 @@ const emptyForm = {
   price: "",
   stock: "",
   ingredients: [],
-  image: null,
-  imageFile: null,
+  image: null, // local preview (Base64) or backend URL
+  imageFile: null, // actual file to upload
 };
 
 function isImageFile(image) {
@@ -52,6 +54,10 @@ function validate(form) {
   return errors;
 }
 
+// Standalone overlay mounted directly on <body> via portal, with a
+// z-index above the main Modal (z-50) — this guarantees the image
+// preview always stacks on top, regardless of render order or how
+// Modal.jsx is implemented internally.
 function ImagePreviewOverlay({ image, onClose }) {
   if (!image) return null;
 
@@ -97,13 +103,16 @@ export default function Products() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [ingredientsCatalog, setIngredientsCatalog] = useState([]);
+  const [ingredientsCatalog, setIngredientsCatalog] = useState([]); // [{id, name, allergens: [id,...]}]
   const [ingredientMap, setIngredientMap] = useState(new Map()); // name -> id
+  const [allergensCatalog, setAllergensCatalog] = useState([]); // [{id, name}]
+  const [manageIngredientsOpen, setManageIngredientsOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null); // { url, name } | null
 
   useEffect(() => {
     loadProducts();
     loadIngredients();
+    loadAllergens();
   }, []);
 
   async function loadProducts() {
@@ -124,28 +133,58 @@ export default function Products() {
       const sorted = [...data].sort((a, b) =>
         a.name.localeCompare(b.name, "es"),
       );
-      setIngredientsCatalog(sorted.map((i) => i.name));
+      setIngredientsCatalog(sorted);
       setIngredientMap(new Map(sorted.map((i) => [i.name, i.id])));
     } catch (err) {
       toast.error("No se pudieron cargar los ingredientes", err.message);
     }
   }
 
+  async function loadAllergens() {
+    try {
+      const data = await getAllergens(token);
+      setAllergensCatalog(data);
+    } catch (err) {
+      toast.error("No se pudieron cargar los alérgenos", err.message);
+    }
+  }
+
   async function addToCatalog(newIngredient) {
     if (
       ingredientsCatalog.some(
-        (i) => i.toLowerCase() === newIngredient.toLowerCase(),
+        (i) => i.name.toLowerCase() === newIngredient.toLowerCase(),
       )
     )
       return;
     try {
       const created = await createIngredient(newIngredient, token);
       setIngredientsCatalog((prev) =>
-        [...prev, created.name].sort((a, b) => a.localeCompare(b, "es")),
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "es")),
       );
       setIngredientMap((prev) => new Map(prev).set(created.name, created.id));
     } catch (err) {
       toast.error("No se pudo agregar el ingrediente", err.message);
+    }
+  }
+
+  async function toggleIngredientAllergen(ingredient, allergenId) {
+    const currentIds = (ingredient.allergens || []).map((a) =>
+      typeof a === "object" ? a.id : a,
+    );
+    const nextIds = currentIds.includes(allergenId)
+      ? currentIds.filter((id) => id !== allergenId)
+      : [...currentIds, allergenId];
+    try {
+      const updated = await updateIngredient(
+        ingredient.id,
+        { allergens: nextIds },
+        token,
+      );
+      setIngredientsCatalog((prev) =>
+        prev.map((i) => (i.id === ingredient.id ? updated : i)),
+      );
+    } catch (err) {
+      toast.error("No se pudo actualizar", err.message);
     }
   }
 
@@ -169,16 +208,13 @@ export default function Products() {
 
   function openEdit(p) {
     setEditingId(p.id);
-    const idToName = new Map(
-      [...ingredientMap].map(([name, id]) => [id, name]),
-    );
     setForm({
       name: p.name,
       description: p.description,
       category: p.category || CATEGORIES[0],
       price: String(p.price),
       stock: String(p.stock),
-      ingredients: p.ingredients.map((item) => typeof item === 'object' ? item.name : idToName.get(item)).filter(Boolean),
+      ingredients: p.ingredients.map((i) => i.name),
       image: p.image || null,
       imageFile: null,
     });
@@ -273,9 +309,17 @@ export default function Products() {
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-ink-100 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
               />
             </div>
-            <Button icon={Plus} onClick={openNew}>
-              Nuevo producto
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setManageIngredientsOpen(true)}
+              >
+                Gestionar alérgenos por ingrediente
+              </Button>
+              <Button icon={Plus} onClick={openNew}>
+                Nuevo producto
+              </Button>
+            </div>
           </div>
 
           <div className="px-5 py-2.5 border-b border-ink-100 bg-ink-50/50 text-xs text-ink-400 flex items-center gap-1.5">
@@ -541,7 +585,7 @@ export default function Products() {
           >
             <IngredientsInput
               value={form.ingredients}
-              catalog={ingredientsCatalog}
+              catalog={ingredientsCatalog.map((i) => i.name)}
               onChange={(newIngredients) =>
                 updateField("ingredients", newIngredients)
               }
@@ -554,6 +598,52 @@ export default function Products() {
             )}
           </Field>
         </form>
+      </Modal>
+
+      <Modal
+        open={manageIngredientsOpen}
+        onClose={() => setManageIngredientsOpen(false)}
+        title="Alérgenos por ingrediente"
+        width="max-w-2xl"
+      >
+        <p className="text-sm text-ink-500 mb-4">
+          Marca qué alérgenos contiene cada ingrediente. Los productos calculan
+          sus alérgenos automáticamente según los ingredientes que uses.
+        </p>
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+          {ingredientsCatalog.map((ingredient) => (
+            <div
+              key={ingredient.id}
+              className="border border-ink-100 rounded-xl p-3"
+            >
+              <p className="font-medium text-ink-900 mb-2">{ingredient.name}</p>
+              <div className="flex flex-wrap gap-2">
+                {allergensCatalog.map((allergen) => {
+                  const ingredientAllergenIds = (
+                    ingredient.allergens || []
+                  ).map((a) => (typeof a === "object" ? a.id : a));
+                  const checked = ingredientAllergenIds.includes(allergen.id);
+                  return (
+                    <button
+                      key={allergen.id}
+                      type="button"
+                      onClick={() =>
+                        toggleIngredientAllergen(ingredient, allergen.id)
+                      }
+                      className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                        checked
+                          ? "bg-danger-50 border-danger-500 text-danger-700 font-medium"
+                          : "bg-white border-ink-200 text-ink-500"
+                      }`}
+                    >
+                      {allergen.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       </Modal>
 
       <ImagePreviewOverlay

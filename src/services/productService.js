@@ -49,3 +49,15 @@ export async function updateProduct(id, data, token) {
 export async function deleteProduct(id, token) {
   return apiClient(`/catalog/menu/${id}/`, { method: "DELETE", token });
 }
+
+export async function getAllergens(token) {
+  return apiClient("/catalog/allergens/", { token });
+}
+
+export async function updateIngredient(id, data, token) {
+  return apiClient(`/catalog/ingredients/${id}/`, {
+    method: "PATCH",
+    body: data,
+    token,
+  });
+}
