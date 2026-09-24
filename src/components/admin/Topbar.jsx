@@ -4,8 +4,10 @@ import {
   useInstitution,
   ALL_INSTITUTIONS,
 } from "../../context/InstitutionContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Topbar({ title, subtitle }) {
+  const { user } = useAuth();
   const {
     institutions,
     ownInstitution,
@@ -15,6 +17,46 @@ export default function Topbar({ title, subtitle }) {
   } = useInstitution();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
+  const displayName = (() => {
+    if (user?.first_name || user?.last_name) {
+      return `${user.first_name || ""} ${user.last_name || ""}`.trim();
+    }
+    if (user?.email) {
+      return user.email.split("@")[0];
+    }
+    return "Administrador";
+  })();
+
+  const initials = (() => {
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase();
+    }
+    if (user?.first_name) {
+      return user.first_name.slice(0, 2).toUpperCase();
+    }
+    if (user?.email) {
+      return user.email.slice(0, 2).toUpperCase();
+    }
+    return "AD";
+  })();
+
+  const roleName = (() => {
+    switch (user?.role) {
+      case "ADMIN":
+        return "Administrador";
+      case "OPERATIONS_STAFF":
+        return "Personal Operativo";
+      case "PARENT":
+        return "Padre de Familia";
+      case "STUDENT":
+        return "Estudiante";
+      case "TEACHER":
+        return "Docente";
+      default:
+        return user?.role || "Administrador";
+    }
+  })();
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -94,12 +136,12 @@ export default function Topbar({ title, subtitle }) {
         </div>
 
         <div className="flex items-center gap-2.5 pl-3 border-l border-ink-100">
-          <div className="w-9 h-9 rounded-full bg-brand-50 text-brand-600 font-semibold flex items-center justify-center text-sm">
-            MV
+          <div className="w-9 h-9 rounded-full bg-brand-50 text-brand-600 font-semibold flex items-center justify-center text-sm uppercase select-none">
+            {initials}
           </div>
           <div className="hidden sm:block leading-tight">
-            <p className="text-sm font-semibold text-ink-900">María Vega</p>
-            <p className="text-xs text-ink-500">Administradora</p>
+            <p className="text-sm font-semibold text-ink-900">{displayName}</p>
+            <p className="text-xs text-ink-500">{roleName}</p>
           </div>
         </div>
       </div>
