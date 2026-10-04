@@ -1,6 +1,16 @@
 import { useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Pencil, Trash2, Search, Upload, EyeOff, X } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Search,
+  Upload,
+  EyeOff,
+  X,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import Topbar from "../../components/admin/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
@@ -31,8 +41,8 @@ const emptyForm = {
   price: "",
   stock: "",
   ingredients: [],
-  image: null, // local preview (Base64) or backend URL
-  imageFile: null, // actual file to upload
+  image: null,
+  imageFile: null,
 };
 
 function isImageFile(image) {
@@ -54,10 +64,6 @@ function validate(form) {
   return errors;
 }
 
-// Standalone overlay mounted directly on <body> via portal, with a
-// z-index above the main Modal (z-50) — this guarantees the image
-// preview always stacks on top, regardless of render order or how
-// Modal.jsx is implemented internally.
 function ImagePreviewOverlay({ image, onClose }) {
   if (!image) return null;
 
@@ -89,6 +95,80 @@ function ImagePreviewOverlay({ image, onClose }) {
   );
 }
 
+// Inline card shown per ingredient inside the product modal: forces the
+// admin to explicitly confirm which allergens it has (or that it has
+// none) before the product can be saved. Mirrors the same toggle pattern
+// used in the standalone "Gestionar alérgenos" modal, so both stay in sync
+// against the same backend field (Ingredient.allergens_reviewed).
+function IngredientAllergenReview({
+  ingredient,
+  allergensCatalog,
+  onToggleAllergen,
+  onMarkNoAllergens,
+}) {
+  const ingredientAllergenIds = (ingredient.allergens || []).map((a) =>
+    typeof a === "object" ? a.id : a,
+  );
+  const isReviewed = Boolean(ingredient.allergens_reviewed);
+  const hasNoAllergens = isReviewed && ingredientAllergenIds.length === 0;
+
+  return (
+    <div
+      className={`border rounded-xl p-3 transition ${
+        isReviewed ? "border-ink-100" : "border-danger-300 bg-danger-50/30"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <p className="font-medium text-ink-900 text-sm">{ingredient.name}</p>
+        {isReviewed ? (
+          <span className="inline-flex items-center gap-1 text-xs text-teal-700 font-medium">
+            <CheckCircle2 size={13} />
+            Confirmado
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs text-danger-600 font-medium">
+            <AlertTriangle size={13} />
+            Pendiente de revisión
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-ink-400 mb-2">
+        ¿Este ingrediente contiene alguno de estos alérgenos?
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {allergensCatalog.map((allergen) => {
+          const checked = ingredientAllergenIds.includes(allergen.id);
+          return (
+            <button
+              key={allergen.id}
+              type="button"
+              onClick={() => onToggleAllergen(ingredient, allergen.id)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition ${
+                checked
+                  ? "bg-danger-50 border-danger-500 text-danger-700 font-medium"
+                  : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
+              }`}
+            >
+              {allergen.name}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onMarkNoAllergens(ingredient)}
+          className={`text-xs px-3 py-1.5 rounded-full border transition ${
+            hasNoAllergens
+              ? "bg-teal-50 border-teal-500 text-teal-700 font-medium"
+              : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
+          }`}
+        >
+          Sin alérgenos conocidos
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Products() {
   const { token } = useAuth();
   const toast = useToast();
@@ -103,11 +183,11 @@ export default function Products() {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [ingredientsCatalog, setIngredientsCatalog] = useState([]); // [{id, name, allergens: [id,...]}]
-  const [ingredientMap, setIngredientMap] = useState(new Map()); // name -> id
-  const [allergensCatalog, setAllergensCatalog] = useState([]); // [{id, name}]
+  const [ingredientsCatalog, setIngredientsCatalog] = useState([]);
+  const [ingredientMap, setIngredientMap] = useState(new Map());
+  const [allergensCatalog, setAllergensCatalog] = useState([]);
   const [manageIngredientsOpen, setManageIngredientsOpen] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null); // { url, name } | null
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     loadProducts();
@@ -188,10 +268,40 @@ export default function Products() {
     }
   }
 
+  async function markIngredientNoAllergens(ingredient) {
+    try {
+      const updated = await updateIngredient(
+        ingredient.id,
+        { allergens: [] },
+        token,
+      );
+      setIngredientsCatalog((prev) =>
+        prev.map((i) => (i.id === ingredient.id ? updated : i)),
+      );
+    } catch (err) {
+      toast.error("No se pudo actualizar", err.message);
+    }
+  }
+
   const filtered = useMemo(
     () =>
       items.filter((p) => p.name.toLowerCase().includes(query.toLowerCase())),
     [items, query],
+  );
+
+  // Ingredients currently selected in the open product form, resolved
+  // against the live catalog so their allergens_reviewed state is fresh.
+  const selectedIngredientObjects = useMemo(
+    () =>
+      form.ingredients
+        .map((name) => ingredientsCatalog.find((i) => i.name === name))
+        .filter(Boolean),
+    [form.ingredients, ingredientsCatalog],
+  );
+
+  const pendingReviewIngredients = useMemo(
+    () => selectedIngredientObjects.filter((i) => !i.allergens_reviewed),
+    [selectedIngredientObjects],
   );
 
   function updateField(field, value) {
@@ -236,6 +346,13 @@ export default function Products() {
     const validationErrors = validate(form);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      return;
+    }
+    if (pendingReviewIngredients.length > 0) {
+      toast.error(
+        "Faltan alérgenos por confirmar",
+        `Revisa: ${pendingReviewIngredients.map((i) => i.name).join(", ")}`,
+      );
       return;
     }
 
@@ -476,9 +593,20 @@ export default function Products() {
             <Button variant="outline" onClick={() => setModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? "Guardando..." : "Guardar producto"}
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              {pendingReviewIngredients.length > 0 && (
+                <p className="text-xs text-danger-600">
+                  Falta confirmar alérgenos de:{" "}
+                  {pendingReviewIngredients.map((i) => i.name).join(", ")}
+                </p>
+              )}
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || pendingReviewIngredients.length > 0}
+              >
+                {isSaving ? "Guardando..." : "Guardar producto"}
+              </Button>
+            </div>
           </>
         }
       >
@@ -581,7 +709,7 @@ export default function Products() {
 
           <Field
             label="Ingredientes (obligatorio)"
-            hint="Busca en el catálogo o agrega uno nuevo. Requerido para validar alérgenos en el POS."
+            hint="Busca en el catálogo o agrega uno nuevo. Cada ingrediente nuevo o sin confirmar deberá revisarse abajo antes de guardar."
           >
             <IngredientsInput
               value={form.ingredients}
@@ -597,6 +725,22 @@ export default function Products() {
               </p>
             )}
           </Field>
+
+          {selectedIngredientObjects.length > 0 && (
+            <Field label="Confirmación de alérgenos por ingrediente">
+              <div className="space-y-3">
+                {selectedIngredientObjects.map((ingredient) => (
+                  <IngredientAllergenReview
+                    key={ingredient.id}
+                    ingredient={ingredient}
+                    allergensCatalog={allergensCatalog}
+                    onToggleAllergen={toggleIngredientAllergen}
+                    onMarkNoAllergens={markIngredientNoAllergens}
+                  />
+                ))}
+              </div>
+            </Field>
+          )}
         </form>
       </Modal>
 
@@ -608,40 +752,19 @@ export default function Products() {
       >
         <p className="text-sm text-ink-500 mb-4">
           Marca qué alérgenos contiene cada ingrediente. Los productos calculan
-          sus alérgenos automáticamente según los ingredientes que uses.
+          sus alérgenos automáticamente según los ingredientes que uses, y el
+          sistema bloqueará la compra a los niños que tengan esa alergia
+          registrada.
         </p>
         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
           {ingredientsCatalog.map((ingredient) => (
-            <div
+            <IngredientAllergenReview
               key={ingredient.id}
-              className="border border-ink-100 rounded-xl p-3"
-            >
-              <p className="font-medium text-ink-900 mb-2">{ingredient.name}</p>
-              <div className="flex flex-wrap gap-2">
-                {allergensCatalog.map((allergen) => {
-                  const ingredientAllergenIds = (
-                    ingredient.allergens || []
-                  ).map((a) => (typeof a === "object" ? a.id : a));
-                  const checked = ingredientAllergenIds.includes(allergen.id);
-                  return (
-                    <button
-                      key={allergen.id}
-                      type="button"
-                      onClick={() =>
-                        toggleIngredientAllergen(ingredient, allergen.id)
-                      }
-                      className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                        checked
-                          ? "bg-danger-50 border-danger-500 text-danger-700 font-medium"
-                          : "bg-white border-ink-200 text-ink-500"
-                      }`}
-                    >
-                      {allergen.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              ingredient={ingredient}
+              allergensCatalog={allergensCatalog}
+              onToggleAllergen={toggleIngredientAllergen}
+              onMarkNoAllergens={markIngredientNoAllergens}
+            />
           ))}
         </div>
       </Modal>
