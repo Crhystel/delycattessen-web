@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Pencil,
@@ -22,13 +22,22 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import { Field, Input, Textarea } from '../../components/ui/Field'
 import IngredientsInput from '../../components/admin/IngredientsInput'
-import {
-  products,
-  monthlyMenu as initialMonthlyMenu,
-  menuDishes as initialMenuDishes,
-  ingredientsCatalog as initialIngredientsCatalog,
-} from '../../data/mockData'
+import { products } from '../../data/mockData'
 import { usePromotions, TODAY, pad2, formatDateISO, addDays, calculatePromoStatus } from '../../context/PromotionsContext'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
+import { getIngredients, createIngredient } from '../../services/productService'
+import {
+  getDishes,
+  createDish,
+  updateDish,
+  deleteDish,
+  getMonthlyMenus,
+  createMonthlyMenu,
+  updateMenuDay,
+  publishMonthlyMenu,
+  unpublishMonthlyMenu,
+} from '../../services/monthlyMenuService'
 
 const emptyPromoForm = {
   products: [],
@@ -41,21 +50,24 @@ const emptyPromoForm = {
 const emptyDishForm = {
   name: '',
   description: '',
-  image: '🍴',
+  price: '',
+  image: null,
+  imageFile: null,
   ingredients: [],
 }
 
 function isImageFile(image) {
-  return typeof image === 'string' && image.startsWith('data:')
+  return typeof image === 'string' && (image.startsWith('data:') || image.startsWith('http') || image.startsWith('blob:'))
 }
 
 // No stock field: a Monthly Menu dish is prepared on demand based on the
 // day's preorder count, not from a fixed inventory.
-function validateDish(form) {
+function validateDish(form, isEditing = false) {
   const errors = {}
   if (!form.name.trim()) errors.name = 'El nombre del platillo es obligatorio.'
   if (!form.description.trim()) errors.description = 'La descripción es obligatoria.'
-  if (!form.image) errors.image = 'Selecciona o sube una imagen para el platillo.'
+  if (form.price === '' || Number(form.price) <= 0) errors.price = 'Ingresa un precio válido mayor a 0.'
+  if (!isEditing && !form.imageFile) errors.image = 'Selecciona una imagen para el platillo.'
   if (form.ingredients.length === 0) errors.ingredients = 'Debes declarar los ingredientes para validar alérgenos.'
   return errors
 }
@@ -124,8 +136,47 @@ function monthStats(m, promosList) {
   const activePromos = promosList.filter(
     (p) => calculatePromoStatus(p) === 'Activa' && p.startDate <= monthEnd && p.endDate >= monthStart
   ).length
-  const totalPreorders = Object.values(m.preorders || {}).reduce((acc, n) => acc + n, 0)
+  const totalPreorders = m.totalPreorders !== undefined
+    ? m.totalPreorders
+    : Object.values(m.preorders || {}).reduce((acc, n) => acc + n, 0)
   return { businessDays, configuredDays, registeredDishes, activePromos, totalPreorders, totalDays: businessDays.length }
+}
+
+function adaptMonthlyMenu(m) {
+  const monthIndex = m.month - 1
+  const daysMap = {}
+  const preordersMap = {}
+  if (Array.isArray(m.days)) {
+    m.days.forEach((d) => {
+      daysMap[d.date] = d.dish_ids || []
+      preordersMap[d.date] = d.preorder_count || 0
+    })
+  }
+  return {
+    id: m.id,
+    year: m.year,
+    monthIndex,
+    month: monthLabel(m.year, monthIndex),
+    status: m.status === 'PUBLISHED' ? 'Publicado' : 'Borrador',
+    statusRaw: m.status,
+    publicationDate: m.published_at ? m.published_at.slice(0, 10) : null,
+    days: daysMap,
+    preorders: preordersMap,
+    totalPreorders: m.total_preorders || 0,
+  }
+}
+
+function adaptDish(d) {
+  return {
+    id: d.id,
+    name: d.name,
+    description: d.description || '',
+    price: d.price,
+    image: d.image || null,
+    ingredients: (d.ingredients || []).map((ing) => (typeof ing === 'object' ? ing.name : ing)),
+    allergens: d.allergens || [],
+    isActive: d.is_active,
+  }
 }
 
 function MonthlyCalendar({ year, monthIndex, daysMap, preordersMap, onEditDay, selectedDate, datesWithPromo }) {
@@ -192,6 +243,8 @@ function StatChip({ icon: Icon, label, value }) {
 }
 
 function DayEditPanel({ date, dishes, dayDishes, dayPreorders, onToggleProduct, onClose }) {
+  const isReadOnly = dayPreorders > 0
+
   return (
     <Card className="h-full">
       <div className="flex items-start justify-between mb-3 gap-2">
@@ -206,6 +259,12 @@ function DayEditPanel({ date, dishes, dayDishes, dayPreorders, onToggleProduct, 
           <XIcon size={16} />
         </button>
       </div>
+
+      {isReadOnly && (
+        <div className="rounded-xl border border-warning-200 bg-warning-50 px-3.5 py-2.5 text-xs text-warning-800 mb-3">
+          Este día ya tiene preórdenes y no se puede modificar.
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-2.5 gap-2 flex-wrap">
         <p className="text-xs text-ink-500">
@@ -228,15 +287,18 @@ function DayEditPanel({ date, dishes, dayDishes, dayPreorders, onToggleProduct, 
               <button
                 key={p.id}
                 type="button"
-                onClick={() => onToggleProduct(p.id)}
+                disabled={isReadOnly}
+                onClick={() => !isReadOnly && onToggleProduct(p.id)}
                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                   active ? 'border-teal-500 bg-teal-50' : 'border-ink-100 hover:bg-ink-50'
-                }`}
+                } ${isReadOnly ? 'cursor-not-allowed opacity-75' : ''}`}
               >
-                {isImageFile(p.image) ? (
+                {p.image ? (
                   <img src={p.image} alt="" className="w-6 h-6 rounded-md object-cover shrink-0" />
                 ) : (
-                  <span className="text-lg shrink-0">{p.image}</span>
+                  <div className="w-6 h-6 rounded-md bg-ink-100 text-ink-500 flex items-center justify-center shrink-0">
+                    <UtensilsCrossed size={13} />
+                  </div>
                 )}
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-medium text-ink-900 truncate">{p.name}</span>
@@ -281,7 +343,13 @@ function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, on
         </div>
         <div className="flex items-center gap-2">
           {m.status === 'Publicado' ? (
-            <Button icon={Undo2} variant="outline" onClick={onUnpublish}>
+            <Button
+              icon={Undo2}
+              variant="outline"
+              onClick={onUnpublish}
+              disabled={m.totalPreorders > 0}
+              title={m.totalPreorders > 0 ? 'No se puede pasar a borrador: el menú ya tiene preórdenes.' : undefined}
+            >
               Pasar a borrador
             </Button>
           ) : (
@@ -295,7 +363,7 @@ function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, on
       {notified && (
         <div className="mx-4 mt-4 flex items-center gap-2.5 bg-success-50 text-success-600 text-xs font-medium rounded-xl px-3.5 py-3">
           <Mail size={15} className="shrink-0" />
-          Notificación enviada por correo a todos los usuarios registrados.
+          Notificación enviada por correo a los padres de familia de la institución.
         </div>
       )}
 
@@ -357,8 +425,10 @@ function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, on
 export default function Menu() {
   const [tab, setTab] = useState('monthly')
   const { promotions: promos, setPromotions: setPromos } = usePromotions()
+  const { token } = useAuth()
+  const toast = useToast()
 
-  const [monthlyMenus, setMonthlyMenus] = useState(initialMonthlyMenu)
+  const [monthlyMenus, setMonthlyMenus] = useState([])
   const [notifiedMenu, setNotifiedMenu] = useState(null) // id of the just-published menu
 
   const [newMonthModalOpen, setNewMonthModalOpen] = useState(false)
@@ -370,39 +440,102 @@ export default function Menu() {
   const [promoForm, setPromoForm] = useState(emptyPromoForm)
   const [promoError, setPromoError] = useState('')
 
-  // Monthly Menu dishes: their own entity, separate from the Products
-  // catalog, that once created becomes available to assign to days on
-  // the monthly calendar.
-  const [dishes, setDishes] = useState(initialMenuDishes)
-  const [ingredientsCatalog, setIngredientsCatalog] = useState(initialIngredientsCatalog)
+  // Monthly Menu dishes
+  const [dishes, setDishes] = useState([])
+  const [ingredientsCatalog, setIngredientsCatalog] = useState([])
   const [dishModalOpen, setDishModalOpen] = useState(false)
   const [editingDishId, setEditingDishId] = useState(null)
   const [dishForm, setDishForm] = useState(emptyDishForm)
   const [dishErrors, setDishErrors] = useState({})
 
-  function toggleMonthlyProduct(menuId, date, productId) {
+  // Carga inicial de platillos, menús mensuales e ingredientes reales desde la API
+  useEffect(() => {
+    let isMounted = true
+    async function loadData() {
+      if (!token) return
+      try {
+        const [dishesData, menusData, ingredientsData] = await Promise.all([
+          getDishes(token),
+          getMonthlyMenus(token),
+          getIngredients(token),
+        ])
+        if (isMounted) {
+          setDishes(dishesData.map(adaptDish))
+          setMonthlyMenus(menusData.map(adaptMonthlyMenu))
+          setIngredientsCatalog(
+            (ingredientsData || []).sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          )
+        }
+      } catch (err) {
+        if (isMounted) {
+          toast.error('Error al cargar datos', err.message)
+        }
+      }
+    }
+    loadData()
+    return () => {
+      isMounted = false
+    }
+  }, [token, toast])
+
+  async function toggleMonthlyProduct(menuId, date, productId) {
+    const targetMenu = monthlyMenus.find((m) => m.id === menuId)
+    if (!targetMenu) return
+
+    // Bloqueo de edición si el día ya tiene preórdenes
+    if ((targetMenu.preorders?.[date] || 0) > 0) {
+      toast.warning('Día bloqueado', 'Este día ya tiene preórdenes y no se puede modificar.')
+      return
+    }
+
+    const currentDishes = targetMenu.days[date] || []
+    const exists = currentDishes.includes(productId)
+    const nextDishes = exists ? currentDishes.filter((id) => id !== productId) : [...currentDishes, productId]
+
+    // Actualización optimista local
     setMonthlyMenus((prev) =>
       prev.map((m) => {
         if (m.id !== menuId) return m
-        const current = m.days[date] || []
-        const exists = current.includes(productId)
         return {
           ...m,
           days: {
             ...m.days,
-            [date]: exists ? current.filter((id) => id !== productId) : [...current, productId],
+            [date]: nextDishes,
           },
         }
       })
     )
+
+    try {
+      await updateMenuDay(menuId, date, nextDishes, token)
+    } catch (err) {
+      // Revertir estado si falla la petición en el backend
+      setMonthlyMenus((prev) =>
+        prev.map((m) => {
+          if (m.id !== menuId) return m
+          return {
+            ...m,
+            days: {
+              ...m.days,
+              [date]: currentDishes,
+            },
+          }
+        })
+      )
+      toast.error('No se pudo actualizar el día', err.message)
+    }
   }
 
-  function addToIngredientsCatalog(newIngredient) {
-    setIngredientsCatalog((prev) =>
-      prev.some((i) => i.toLowerCase() === newIngredient.toLowerCase())
-        ? prev
-        : [...prev, newIngredient].sort((a, b) => a.localeCompare(b, 'es'))
-    )
+  async function addToIngredientsCatalog(newIngredient) {
+    try {
+      const created = await createIngredient(newIngredient, token)
+      setIngredientsCatalog((prev) =>
+        [...prev, created].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+      )
+      toast.success('Ingrediente agregado', `Se agregó "${created.name}" al catálogo.`)
+    } catch (err) {
+      toast.error('No se pudo agregar el ingrediente', err.message)
+    }
   }
 
   function updateDishField(field, value) {
@@ -422,7 +555,9 @@ export default function Menu() {
     setDishForm({
       name: dish.name,
       description: dish.description,
+      price: dish.price ? String(dish.price) : '',
       image: dish.image,
+      imageFile: null,
       ingredients: [...dish.ingredients],
     })
     setDishErrors({})
@@ -432,37 +567,71 @@ export default function Menu() {
   function handleDishImageFile(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => updateDishField('image', reader.result)
-    reader.readAsDataURL(file)
+    setDishForm((prev) => ({
+      ...prev,
+      imageFile: file,
+      image: URL.createObjectURL(file),
+    }))
+    setDishErrors((prev) => ({ ...prev, image: undefined }))
   }
 
-  function handleSaveDish(e) {
+  async function handleSaveDish(e) {
     e.preventDefault()
-    const validationErrors = validateDish(dishForm)
+    const validationErrors = validateDish(dishForm, Boolean(editingDishId))
     if (Object.keys(validationErrors).length > 0) {
       setDishErrors(validationErrors)
       return
     }
 
-    if (editingDishId) {
-      setDishes((prev) => prev.map((p) => (p.id === editingDishId ? { ...p, ...dishForm } : p)))
-    } else {
-      setDishes((prev) => [...prev, { ...dishForm, id: `pl${Date.now()}` }])
+    // Mapear nombres de ingredientes seleccionados a sus IDs en el catálogo
+    const ingredientIds = dishForm.ingredients
+      .map((name) => ingredientsCatalog.find((i) => i.name.toLowerCase() === name.toLowerCase())?.id)
+      .filter(Boolean)
+
+    const payload = {
+      name: dishForm.name.trim(),
+      description: dishForm.description.trim(),
+      price: parseFloat(dishForm.price).toFixed(2),
+      ingredients: ingredientIds,
     }
-    setDishModalOpen(false)
+    if (dishForm.imageFile) {
+      payload.imageFile = dishForm.imageFile
+    }
+
+    try {
+      if (editingDishId) {
+        const updated = await updateDish(editingDishId, payload, token)
+        const adapted = adaptDish(updated)
+        setDishes((prev) => prev.map((p) => (p.id === editingDishId ? adapted : p)))
+        toast.success('Platillo actualizado', 'El platillo se ha modificado exitosamente.')
+      } else {
+        const created = await createDish(payload, token)
+        const adapted = adaptDish(created)
+        setDishes((prev) => [...prev, adapted])
+        toast.success('Platillo creado', 'El nuevo platillo ha sido agregado al catálogo.')
+      }
+      setDishModalOpen(false)
+    } catch (err) {
+      toast.error('Error al guardar platillo', err.message)
+    }
   }
 
-  function handleDeleteDish(id) {
-    setDishes((prev) => prev.filter((p) => p.id !== id))
-    setMonthlyMenus((prev) =>
-      prev.map((m) => ({
-        ...m,
-        days: Object.fromEntries(
-          Object.entries(m.days).map(([date, ids]) => [date, ids.filter((pid) => pid !== id)])
-        ),
-      }))
-    )
+  async function handleDeleteDish(id) {
+    try {
+      await deleteDish(id, token)
+      setDishes((prev) => prev.filter((p) => p.id !== id))
+      setMonthlyMenus((prev) =>
+        prev.map((m) => ({
+          ...m,
+          days: Object.fromEntries(
+            Object.entries(m.days).map(([date, ids]) => [date, ids.filter((pid) => pid !== id)])
+          ),
+        }))
+      )
+      toast.success('Platillo eliminado', 'El platillo ha sido eliminado exitosamente.')
+    } catch (err) {
+      toast.error('No se pudo eliminar el platillo', err.message)
+    }
   }
 
   function openNewMonthModal() {
@@ -471,7 +640,7 @@ export default function Menu() {
     setNewMonthModalOpen(true)
   }
 
-  function handleCreateMonth() {
+  async function handleCreateMonth() {
     if (!newMonth) return
     const [year, month] = newMonth.split('-').map(Number)
     const monthIndex = month - 1
@@ -480,36 +649,40 @@ export default function Menu() {
       setNewMonthError('Ya existe un menú mensual para ese mes.')
       return
     }
-    const businessDays = getMonthWeekdays(year, monthIndex)
-    setMonthlyMenus((prev) => [
-      {
-        id: `mm${Date.now()}`,
-        month: monthLabel(year, monthIndex),
-        year,
-        monthIndex,
-        status: 'Borrador',
-        publicationDate: null,
-        days: Object.fromEntries(businessDays.map((d) => [d.date, []])),
-      },
-      ...prev,
-    ])
-    setNewMonthModalOpen(false)
+
+    try {
+      const created = await createMonthlyMenu({ year, month }, token)
+      const adapted = adaptMonthlyMenu(created)
+      setMonthlyMenus((prev) => [adapted, ...prev])
+      setNewMonthModalOpen(false)
+      toast.success('Menú creado', 'Borrador de menú mensual creado exitosamente.')
+    } catch (err) {
+      setNewMonthError(err.message)
+    }
   }
 
-  function handlePublishMonth(menuId) {
-    setMonthlyMenus((prev) =>
-      prev.map((m) =>
-        m.id === menuId ? { ...m, status: 'Publicado', publicationDate: formatDateISO(TODAY) } : m
-      )
-    )
-    // RF-09: publishing automatically triggers an email notification to
-    // all registered users (parents, teachers, and staff).
-    setNotifiedMenu(menuId)
-    setTimeout(() => setNotifiedMenu((current) => (current === menuId ? null : current)), 4000)
+  async function handlePublishMonth(menuId) {
+    try {
+      const updated = await publishMonthlyMenu(menuId, token)
+      const adapted = adaptMonthlyMenu(updated)
+      setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? adapted : m)))
+      setNotifiedMenu(menuId)
+      setTimeout(() => setNotifiedMenu((current) => (current === menuId ? null : current)), 5000)
+      toast.success('Menú publicado', 'Notificación enviada por correo a los padres de familia de la institución.')
+    } catch (err) {
+      toast.error('No se pudo publicar el menú', err.message)
+    }
   }
 
-  function handleUnpublishMonth(menuId) {
-    setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? { ...m, status: 'Borrador' } : m)))
+  async function handleUnpublishMonth(menuId) {
+    try {
+      const updated = await unpublishMonthlyMenu(menuId, token)
+      const adapted = adaptMonthlyMenu(updated)
+      setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? adapted : m)))
+      toast.success('Menú en borrador', 'El menú mensual volvió a estado borrador.')
+    } catch (err) {
+      toast.error('No se pudo pasar a borrador', err.message)
+    }
   }
 
   function hasActivePromo(productId, excludeId) {
@@ -659,14 +832,21 @@ export default function Menu() {
                       key={p.id}
                       className="flex items-start gap-2.5 rounded-xl border border-ink-100 px-3.5 py-3"
                     >
-                      {isImageFile(p.image) ? (
-                        <img src={p.image} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      {p.image ? (
+                        <img src={p.image} alt={p.name} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-ink-100" />
                       ) : (
-                        <span className="text-2xl shrink-0">{p.image}</span>
+                        <div className="w-12 h-12 rounded-lg bg-ink-100 text-ink-400 flex items-center justify-center shrink-0">
+                          <UtensilsCrossed size={20} />
+                        </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-ink-900 truncate">{p.name}</p>
-                        <p className="text-xs text-ink-400 line-clamp-2">{p.description}</p>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="text-sm font-medium text-ink-900 truncate">{p.name}</p>
+                          <span className="text-xs font-bold text-teal-700 shrink-0">
+                            ${Number(p.price || 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-400 line-clamp-2 mt-0.5">{p.description}</p>
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {p.ingredients.map((ing) => (
                             <span key={ing} className="text-[10px] bg-ink-50 text-ink-500 rounded-full px-2 py-0.5">
@@ -945,7 +1125,7 @@ export default function Menu() {
         </form>
       </Modal>
 
-      {/* New/edit Monthly Menu dish modal: entity separate from the Products catalog */}
+      {/* New/edit Monthly Menu dish modal */}
       <Modal
         open={dishModalOpen}
         onClose={() => setDishModalOpen(false)}
@@ -961,7 +1141,7 @@ export default function Menu() {
           </>
         }
       >
-        <form onSubmit={handleSaveDish}>
+        <form onSubmit={handleSaveDish} className="space-y-4">
           <Field label="Nombre del platillo">
             <Input
               value={dishForm.name}
@@ -971,7 +1151,7 @@ export default function Menu() {
             {dishErrors.name && <p className="text-xs text-danger-600 mt-1.5">{dishErrors.name}</p>}
           </Field>
 
-          <Field label="Descripción" >
+          <Field label="Descripción">
             <Textarea
               value={dishForm.description}
               onChange={(e) => updateDishField('description', e.target.value)}
@@ -982,12 +1162,26 @@ export default function Menu() {
             )}
           </Field>
 
+          <Field label="Precio (USD)">
+            <Input
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={dishForm.price}
+              onChange={(e) => updateDishField('price', e.target.value)}
+              placeholder="0.00"
+            />
+            {dishErrors.price && <p className="text-xs text-danger-600 mt-1.5">{dishErrors.price}</p>}
+          </Field>
+
           <Field label="Imagen del platillo">
             <div className="flex items-center gap-3">
-              {isImageFile(dishForm.image) ? (
-                <img src={dishForm.image} alt="" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
+              {dishForm.image ? (
+                <img src={dishForm.image} alt="Vista previa" className="w-12 h-12 rounded-lg object-cover border border-ink-100" />
               ) : (
-                <span className="text-3xl">{dishForm.image}</span>
+                <div className="w-12 h-12 rounded-lg bg-ink-100 text-ink-400 flex items-center justify-center shrink-0">
+                  <UtensilsCrossed size={20} />
+                </div>
               )}
               <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
                 <Upload size={15} />
@@ -1004,7 +1198,7 @@ export default function Menu() {
           >
             <IngredientsInput
               value={dishForm.ingredients}
-              catalog={ingredientsCatalog}
+              catalog={ingredientsCatalog.map((i) => i.name)}
               onChange={(newIngredients) => updateDishField('ingredients', newIngredients)}
               onNewIngredient={addToIngredientsCatalog}
             />
