@@ -1,5 +1,9 @@
 import { apiClient } from "./apiClient";
 
+function institutionQuery(institutionParam) {
+  return institutionParam ? `?institution=${institutionParam}` : "";
+}
+
 function buildDishFormData(data) {
   const formData = new FormData();
   if (data.name !== undefined) formData.append("name", data.name);
@@ -14,12 +18,12 @@ function buildDishFormData(data) {
   return formData;
 }
 
-export async function getDishes(token) {
-  return apiClient("/catalog/dishes/", { token });
+export async function getDishes(token, institutionParam) {
+  return apiClient(`/catalog/dishes/${institutionQuery(institutionParam)}`, { token });
 }
 
-export async function createDish(data, token) {
-  return apiClient("/catalog/dishes/", {
+export async function createDish(data, token, institutionParam) {
+  return apiClient(`/catalog/dishes/${institutionQuery(institutionParam)}`, {
     method: "POST",
     body: buildDishFormData(data),
     token,
@@ -27,8 +31,8 @@ export async function createDish(data, token) {
   });
 }
 
-export async function updateDish(id, data, token) {
-  return apiClient(`/catalog/dishes/${id}/`, {
+export async function updateDish(id, data, token, institutionParam) {
+  return apiClient(`/catalog/dishes/${id}/${institutionQuery(institutionParam)}`, {
     method: "PATCH",
     body: buildDishFormData(data),
     token,
@@ -36,42 +40,42 @@ export async function updateDish(id, data, token) {
   });
 }
 
-export async function deleteDish(id, token) {
-  return apiClient(`/catalog/dishes/${id}/`, {
+export async function deleteDish(id, token, institutionParam) {
+  return apiClient(`/catalog/dishes/${id}/${institutionQuery(institutionParam)}`, {
     method: "DELETE",
     token,
   });
 }
 
-export async function getMonthlyMenus(token) {
-  return apiClient("/catalog/monthly_menus/", { token });
+export async function getMonthlyMenus(token, institutionParam) {
+  return apiClient(`/catalog/monthly_menus/${institutionQuery(institutionParam)}`, { token });
 }
 
-export async function createMonthlyMenu({ year, month }, token) {
-  return apiClient("/catalog/monthly_menus/", {
+export async function createMonthlyMenu({ year, month }, token, institutionParam) {
+  return apiClient(`/catalog/monthly_menus/${institutionQuery(institutionParam)}`, {
     method: "POST",
     body: { year, month },
     token,
   });
 }
 
-export async function updateMenuDay(menuId, date, dishIds, token) {
-  return apiClient(`/catalog/monthly_menus/${menuId}/days/${date}/`, {
+export async function updateMenuDay(menuId, date, dishIds, token, institutionParam) {
+  return apiClient(`/catalog/monthly_menus/${menuId}/days/${date}/${institutionQuery(institutionParam)}`, {
     method: "PUT",
     body: { dish_ids: dishIds },
     token,
   });
 }
 
-export async function publishMonthlyMenu(menuId, token) {
-  return apiClient(`/catalog/monthly_menus/${menuId}/publish/`, {
+export async function publishMonthlyMenu(menuId, token, institutionParam) {
+  return apiClient(`/catalog/monthly_menus/${menuId}/publish/${institutionQuery(institutionParam)}`, {
     method: "POST",
     token,
   });
 }
 
-export async function unpublishMonthlyMenu(menuId, token) {
-  return apiClient(`/catalog/monthly_menus/${menuId}/unpublish/`, {
+export async function unpublishMonthlyMenu(menuId, token, institutionParam) {
+  return apiClient(`/catalog/monthly_menus/${menuId}/unpublish/${institutionQuery(institutionParam)}`, {
     method: "POST",
     token,
   });

@@ -8,8 +8,6 @@ import {
   Upload,
   EyeOff,
   X,
-  CheckCircle2,
-  AlertTriangle,
 } from "lucide-react";
 import Topbar from "../../components/admin/Topbar";
 import Card from "../../components/ui/Card";
@@ -18,9 +16,14 @@ import Badge from "../../components/ui/Badge";
 import Modal from "../../components/ui/Modal";
 import { Field, Input, Select, Textarea } from "../../components/ui/Field";
 import IngredientsInput from "../../components/admin/IngredientsInput";
+import IngredientAllergenReview from "../../components/admin/IngredientAllergenReview";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { usePromotions, activePromoFor } from "../../context/PromotionsContext";
+import {
+  useInstitution,
+  ALL_INSTITUTIONS,
+} from "../../context/InstitutionContext";
 import {
   getAdminProducts,
   getIngredients,
@@ -95,84 +98,11 @@ function ImagePreviewOverlay({ image, onClose }) {
   );
 }
 
-// Inline card shown per ingredient inside the product modal: forces the
-// admin to explicitly confirm which allergens it has (or that it has
-// none) before the product can be saved. Mirrors the same toggle pattern
-// used in the standalone "Gestionar alérgenos" modal, so both stay in sync
-// against the same backend field (Ingredient.allergens_reviewed).
-function IngredientAllergenReview({
-  ingredient,
-  allergensCatalog,
-  onToggleAllergen,
-  onMarkNoAllergens,
-}) {
-  const ingredientAllergenIds = (ingredient.allergens || []).map((a) =>
-    typeof a === "object" ? a.id : a,
-  );
-  const isReviewed = Boolean(ingredient.allergens_reviewed);
-  const hasNoAllergens = isReviewed && ingredientAllergenIds.length === 0;
-
-  return (
-    <div
-      className={`border rounded-xl p-3 transition ${
-        isReviewed ? "border-ink-100" : "border-danger-300 bg-danger-50/30"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <p className="font-medium text-ink-900 text-sm">{ingredient.name}</p>
-        {isReviewed ? (
-          <span className="inline-flex items-center gap-1 text-xs text-teal-700 font-medium">
-            <CheckCircle2 size={13} />
-            Confirmado
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 text-xs text-danger-600 font-medium">
-            <AlertTriangle size={13} />
-            Pendiente de revisión
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-ink-400 mb-2">
-        ¿Este ingrediente contiene alguno de estos alérgenos?
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {allergensCatalog.map((allergen) => {
-          const checked = ingredientAllergenIds.includes(allergen.id);
-          return (
-            <button
-              key={allergen.id}
-              type="button"
-              onClick={() => onToggleAllergen(ingredient, allergen.id)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                checked
-                  ? "bg-danger-50 border-danger-500 text-danger-700 font-medium"
-                  : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
-              }`}
-            >
-              {allergen.name}
-            </button>
-          );
-        })}
-        <button
-          type="button"
-          onClick={() => onMarkNoAllergens(ingredient)}
-          className={`text-xs px-3 py-1.5 rounded-full border transition ${
-            hasNoAllergens
-              ? "bg-teal-50 border-teal-500 text-teal-700 font-medium"
-              : "bg-white border-ink-200 text-ink-500 hover:border-ink-300"
-          }`}
-        >
-          Sin alérgenos conocidos
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export default function Products() {
   const { token } = useAuth();
   const toast = useToast();
   const { promotions } = usePromotions();
+  const { selectedInstitution } = useInstitution();
 
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -193,12 +123,12 @@ export default function Products() {
     loadProducts();
     loadIngredients();
     loadAllergens();
-  }, []);
+  }, [selectedInstitution]);
 
   async function loadProducts() {
     setIsLoading(true);
     try {
-      const data = await getAdminProducts(token);
+      const data = await getAdminProducts(token, selectedInstitution);
       setItems(data);
     } catch (err) {
       toast.error("No se pudo cargar el catálogo", err.message);
@@ -373,13 +303,13 @@ export default function Products() {
     setIsSaving(true);
     try {
       if (editingId) {
-        await updateProduct(editingId, payload, token);
+        await updateProduct(editingId, payload, token, selectedInstitution);
         toast.success(
           "Producto actualizado",
           "Los cambios se guardaron correctamente.",
         );
       } else {
-        await createProduct(payload, token);
+        await createProduct(payload, token, selectedInstitution);
         toast.success("Producto creado", "El producto se agregó al catálogo.");
       }
       setModalOpen(false);
@@ -393,7 +323,7 @@ export default function Products() {
 
   async function handleDelete(id) {
     try {
-      await deleteProduct(id, token);
+      await deleteProduct(id, token, selectedInstitution);
       toast.success(
         "Producto eliminado",
         "Se quitó del catálogo correctamente.",
@@ -451,6 +381,9 @@ export default function Products() {
                 <tr className="text-left text-ink-500 border-b border-ink-100">
                   <th className="px-5 py-3 font-medium">Producto</th>
                   <th className="px-5 py-3 font-medium">Categoría</th>
+                  {selectedInstitution === ALL_INSTITUTIONS && (
+                    <th className="px-5 py-3 font-medium">Sede</th>
+                  )}
                   <th className="px-5 py-3 font-medium">Precio</th>
                   <th className="px-5 py-3 font-medium">Stock</th>
                   <th className="px-5 py-3 font-medium">Visibilidad</th>
@@ -461,7 +394,7 @@ export default function Products() {
                 {isLoading && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={selectedInstitution === ALL_INSTITUTIONS ? 7 : 6}
                       className="px-5 py-8 text-center text-ink-300"
                     >
                       Cargando productos...
@@ -521,6 +454,11 @@ export default function Products() {
                           </div>
                         </td>
                         <td className="px-5 py-3 text-ink-500">{p.category}</td>
+                        {selectedInstitution === ALL_INSTITUTIONS && (
+                          <td className="px-5 py-3 text-ink-500">
+                            {p.institution_name}
+                          </td>
+                        )}
                         <td className="px-5 py-3">
                           {promo ? (
                             <div className="flex items-center gap-1.5">
@@ -571,7 +509,7 @@ export default function Products() {
                 {!isLoading && filtered.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={selectedInstitution === ALL_INSTITUTIONS ? 7 : 6}
                       className="px-5 py-8 text-center text-ink-300"
                     >
                       No se encontraron productos.

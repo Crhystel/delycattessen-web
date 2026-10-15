@@ -164,7 +164,7 @@ export default function Users() {
     setCreating(true);
     setCreateError("");
     try {
-      const data = await createStaff(token, { ...createForm, role: tab });
+      const data = await createStaff(token, { ...createForm, role: tab }, selectedInstitution);
       setCreatedCredentials({
         email: data.email,
         password: data.temporary_password,
@@ -207,7 +207,7 @@ export default function Users() {
     setSavingEdit(true);
     setEditError("");
     try {
-      await updateStaff(token, editModal.id, editForm);
+      await updateStaff(token, editModal.id, editForm, selectedInstitution);
       toast.success(
         "Cambios guardados",
         `Se actualizó la información de ${fullName(editForm)}.`,
@@ -226,7 +226,7 @@ export default function Users() {
   async function toggleStatus(staffMember) {
     try {
       const nextActive = !staffMember.is_active;
-      await updateStaff(token, staffMember.id, { is_active: nextActive });
+      await updateStaff(token, staffMember.id, { is_active: nextActive }, selectedInstitution);
       toast.success(
         nextActive ? "Cuenta activada" : "Cuenta desactivada",
         `${fullName(staffMember)} ahora está ${nextActive ? "activo" : "inactivo"}.`,
@@ -247,7 +247,7 @@ export default function Users() {
     if (!deleteModal) return;
     setDeleting(true);
     try {
-      await deleteStaff(token, deleteModal.id);
+      await deleteStaff(token, deleteModal.id, selectedInstitution);
       toast.success("Personal eliminado", `${name} se eliminó correctamente.`);
       setDeleteModal(null);
       loadStaff();

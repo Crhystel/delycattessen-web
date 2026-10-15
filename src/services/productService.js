@@ -1,5 +1,9 @@
 import { apiClient } from "./apiClient";
 
+function institutionQuery(institutionParam) {
+  return institutionParam ? `?institution=${institutionParam}` : "";
+}
+
 function buildFormData(data) {
   const formData = new FormData();
   formData.append("name", data.name);
@@ -12,8 +16,8 @@ function buildFormData(data) {
   return formData;
 }
 
-export async function getAdminProducts(token) {
-  return apiClient("/catalog/menu/admin/", { token });
+export async function getAdminProducts(token, institutionParam) {
+  return apiClient(`/catalog/menu/admin/${institutionQuery(institutionParam)}`, { token });
 }
 
 export async function getIngredients(token) {
@@ -28,8 +32,8 @@ export async function createIngredient(name, token) {
   });
 }
 
-export async function createProduct(data, token) {
-  return apiClient("/catalog/menu/create/", {
+export async function createProduct(data, token, institutionParam) {
+  return apiClient(`/catalog/menu/create/${institutionQuery(institutionParam)}`, {
     method: "POST",
     body: buildFormData(data),
     token,
@@ -37,8 +41,8 @@ export async function createProduct(data, token) {
   });
 }
 
-export async function updateProduct(id, data, token) {
-  return apiClient(`/catalog/menu/${id}/`, {
+export async function updateProduct(id, data, token, institutionParam) {
+  return apiClient(`/catalog/menu/${id}/${institutionQuery(institutionParam)}`, {
     method: "PATCH",
     body: buildFormData(data),
     token,
@@ -46,8 +50,11 @@ export async function updateProduct(id, data, token) {
   });
 }
 
-export async function deleteProduct(id, token) {
-  return apiClient(`/catalog/menu/${id}/`, { method: "DELETE", token });
+export async function deleteProduct(id, token, institutionParam) {
+  return apiClient(`/catalog/menu/${id}/${institutionQuery(institutionParam)}`, {
+    method: "DELETE",
+    token,
+  });
 }
 
 export async function getAllergens(token) {

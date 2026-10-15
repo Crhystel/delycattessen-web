@@ -22,11 +22,13 @@ import Badge from '../../components/ui/Badge'
 import Modal from '../../components/ui/Modal'
 import { Field, Input, Textarea } from '../../components/ui/Field'
 import IngredientsInput from '../../components/admin/IngredientsInput'
+import IngredientAllergenReview from '../../components/admin/IngredientAllergenReview'
 import { products } from '../../data/mockData'
 import { usePromotions, TODAY, pad2, formatDateISO, addDays, calculatePromoStatus } from '../../context/PromotionsContext'
 import { useAuth } from '../../context/AuthContext'
+import { useInstitution, ALL_INSTITUTIONS } from '../../context/InstitutionContext'
 import { useToast } from '../../context/ToastContext'
-import { getIngredients, createIngredient } from '../../services/productService'
+import { getIngredients, createIngredient, getAllergens, updateIngredient } from '../../services/productService'
 import {
   getDishes,
   createDish,
@@ -163,6 +165,7 @@ function adaptMonthlyMenu(m) {
     days: daysMap,
     preorders: preordersMap,
     totalPreorders: m.total_preorders || 0,
+    institutionName: m.institution_name || null,
   }
 }
 
@@ -176,6 +179,7 @@ function adaptDish(d) {
     ingredients: (d.ingredients || []).map((ing) => (typeof ing === 'object' ? ing.name : ing)),
     allergens: d.allergens || [],
     isActive: d.is_active,
+    institutionName: d.institution_name || null,
   }
 }
 
@@ -313,7 +317,7 @@ function DayEditPanel({ date, dishes, dayDishes, dayPreorders, onToggleProduct, 
   )
 }
 
-function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, onUnpublish }) {
+function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, onUnpublish, showInstitution }) {
   const [selectedDate, setSelectedDate] = useState(null)
 
   const stats = monthStats(m, promos)
@@ -340,6 +344,9 @@ function MonthCard({ m, promos, dishes, notified, onToggleProduct, onPublish, on
             )}
           </div>
           <Badge tone={m.status === 'Publicado' ? 'success' : 'neutral'}>{m.status}</Badge>
+          {showInstitution && m.institutionName && (
+            <Badge tone="neutral">{m.institutionName}</Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {m.status === 'Publicado' ? (
@@ -426,6 +433,7 @@ export default function Menu() {
   const [tab, setTab] = useState('monthly')
   const { promotions: promos, setPromotions: setPromos } = usePromotions()
   const { token } = useAuth()
+  const { selectedInstitution } = useInstitution()
   const toast = useToast()
 
   const [monthlyMenus, setMonthlyMenus] = useState([])
@@ -443,21 +451,23 @@ export default function Menu() {
   // Monthly Menu dishes
   const [dishes, setDishes] = useState([])
   const [ingredientsCatalog, setIngredientsCatalog] = useState([])
+  const [allergensCatalog, setAllergensCatalog] = useState([])
   const [dishModalOpen, setDishModalOpen] = useState(false)
   const [editingDishId, setEditingDishId] = useState(null)
   const [dishForm, setDishForm] = useState(emptyDishForm)
   const [dishErrors, setDishErrors] = useState({})
 
-  // Carga inicial de platillos, menús mensuales e ingredientes reales desde la API
+  // Carga inicial de platillos, menús mensuales, ingredientes y alérgenos reales desde la API
   useEffect(() => {
     let isMounted = true
     async function loadData() {
       if (!token) return
       try {
-        const [dishesData, menusData, ingredientsData] = await Promise.all([
-          getDishes(token),
-          getMonthlyMenus(token),
+        const [dishesData, menusData, ingredientsData, allergensData] = await Promise.all([
+          getDishes(token, selectedInstitution),
+          getMonthlyMenus(token, selectedInstitution),
           getIngredients(token),
+          getAllergens(token),
         ])
         if (isMounted) {
           setDishes(dishesData.map(adaptDish))
@@ -465,6 +475,7 @@ export default function Menu() {
           setIngredientsCatalog(
             (ingredientsData || []).sort((a, b) => a.name.localeCompare(b.name, 'es'))
           )
+          setAllergensCatalog(allergensData || [])
         }
       } catch (err) {
         if (isMounted) {
@@ -476,7 +487,7 @@ export default function Menu() {
     return () => {
       isMounted = false
     }
-  }, [token, toast])
+  }, [token, toast, selectedInstitution])
 
   async function toggleMonthlyProduct(menuId, date, productId) {
     const targetMenu = monthlyMenus.find((m) => m.id === menuId)
@@ -507,7 +518,7 @@ export default function Menu() {
     )
 
     try {
-      await updateMenuDay(menuId, date, nextDishes, token)
+      await updateMenuDay(menuId, date, nextDishes, token, selectedInstitution)
     } catch (err) {
       // Revertir estado si falla la petición en el backend
       setMonthlyMenus((prev) =>
@@ -537,6 +548,47 @@ export default function Menu() {
       toast.error('No se pudo agregar el ingrediente', err.message)
     }
   }
+
+  // Confirmación de alérgenos por ingrediente, igual que en Catálogo e
+  // Inventario: el backend exige allergens_reviewed=true en cada ingrediente
+  // antes de permitir guardar el platillo.
+  async function toggleIngredientAllergen(ingredient, allergenId) {
+    const currentIds = (ingredient.allergens || []).map((a) =>
+      typeof a === 'object' ? a.id : a,
+    )
+    const nextIds = currentIds.includes(allergenId)
+      ? currentIds.filter((id) => id !== allergenId)
+      : [...currentIds, allergenId]
+    try {
+      const updated = await updateIngredient(ingredient.id, { allergens: nextIds }, token)
+      setIngredientsCatalog((prev) =>
+        prev.map((i) => (i.id === ingredient.id ? updated : i)),
+      )
+    } catch (err) {
+      toast.error('No se pudo actualizar', err.message)
+    }
+  }
+
+  async function markIngredientNoAllergens(ingredient) {
+    try {
+      const updated = await updateIngredient(ingredient.id, { allergens: [] }, token)
+      setIngredientsCatalog((prev) =>
+        prev.map((i) => (i.id === ingredient.id ? updated : i)),
+      )
+    } catch (err) {
+      toast.error('No se pudo actualizar', err.message)
+    }
+  }
+
+  // Ingredientes seleccionados en el formulario de platillo, resueltos
+  // contra el catálogo vivo para conocer su estado de revisión de alérgenos.
+  const selectedIngredientObjects = dishForm.ingredients
+    .map((name) => ingredientsCatalog.find((i) => i.name === name))
+    .filter(Boolean)
+
+  const pendingReviewIngredients = selectedIngredientObjects.filter(
+    (i) => !i.allergens_reviewed,
+  )
 
   function updateDishField(field, value) {
     setDishForm((prev) => ({ ...prev, [field]: value }))
@@ -582,6 +634,13 @@ export default function Menu() {
       setDishErrors(validationErrors)
       return
     }
+    if (pendingReviewIngredients.length > 0) {
+      toast.error(
+        'Faltan alérgenos por confirmar',
+        `Revisa: ${pendingReviewIngredients.map((i) => i.name).join(', ')}`,
+      )
+      return
+    }
 
     // Mapear nombres de ingredientes seleccionados a sus IDs en el catálogo
     const ingredientIds = dishForm.ingredients
@@ -600,12 +659,12 @@ export default function Menu() {
 
     try {
       if (editingDishId) {
-        const updated = await updateDish(editingDishId, payload, token)
+        const updated = await updateDish(editingDishId, payload, token, selectedInstitution)
         const adapted = adaptDish(updated)
         setDishes((prev) => prev.map((p) => (p.id === editingDishId ? adapted : p)))
         toast.success('Platillo actualizado', 'El platillo se ha modificado exitosamente.')
       } else {
-        const created = await createDish(payload, token)
+        const created = await createDish(payload, token, selectedInstitution)
         const adapted = adaptDish(created)
         setDishes((prev) => [...prev, adapted])
         toast.success('Platillo creado', 'El nuevo platillo ha sido agregado al catálogo.')
@@ -618,7 +677,7 @@ export default function Menu() {
 
   async function handleDeleteDish(id) {
     try {
-      await deleteDish(id, token)
+      await deleteDish(id, token, selectedInstitution)
       setDishes((prev) => prev.filter((p) => p.id !== id))
       setMonthlyMenus((prev) =>
         prev.map((m) => ({
@@ -651,7 +710,7 @@ export default function Menu() {
     }
 
     try {
-      const created = await createMonthlyMenu({ year, month }, token)
+      const created = await createMonthlyMenu({ year, month }, token, selectedInstitution)
       const adapted = adaptMonthlyMenu(created)
       setMonthlyMenus((prev) => [adapted, ...prev])
       setNewMonthModalOpen(false)
@@ -663,7 +722,7 @@ export default function Menu() {
 
   async function handlePublishMonth(menuId) {
     try {
-      const updated = await publishMonthlyMenu(menuId, token)
+      const updated = await publishMonthlyMenu(menuId, token, selectedInstitution)
       const adapted = adaptMonthlyMenu(updated)
       setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? adapted : m)))
       setNotifiedMenu(menuId)
@@ -676,7 +735,7 @@ export default function Menu() {
 
   async function handleUnpublishMonth(menuId) {
     try {
-      const updated = await unpublishMonthlyMenu(menuId, token)
+      const updated = await unpublishMonthlyMenu(menuId, token, selectedInstitution)
       const adapted = adaptMonthlyMenu(updated)
       setMonthlyMenus((prev) => prev.map((m) => (m.id === menuId ? adapted : m)))
       toast.success('Menú en borrador', 'El menú mensual volvió a estado borrador.')
@@ -846,6 +905,9 @@ export default function Menu() {
                             ${Number(p.price || 0).toFixed(2)}
                           </span>
                         </div>
+                        {selectedInstitution === ALL_INSTITUTIONS && p.institutionName && (
+                          <Badge tone="neutral">{p.institutionName}</Badge>
+                        )}
                         <p className="text-xs text-ink-400 line-clamp-2 mt-0.5">{p.description}</p>
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {p.ingredients.map((ing) => (
@@ -891,6 +953,7 @@ export default function Menu() {
                   onToggleProduct={(date, productId) => toggleMonthlyProduct(m.id, date, productId)}
                   onPublish={() => handlePublishMonth(m.id)}
                   onUnpublish={() => handleUnpublishMonth(m.id)}
+                  showInstitution={selectedInstitution === ALL_INSTITUTIONS}
                 />
               ))}
           </div>
@@ -1135,9 +1198,17 @@ export default function Menu() {
             <Button variant="outline" onClick={() => setDishModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveDish}>
-              {editingDishId ? 'Guardar cambios' : 'Crear platillo'}
-            </Button>
+            <div className="flex flex-col items-end gap-1">
+              {pendingReviewIngredients.length > 0 && (
+                <p className="text-xs text-danger-600">
+                  Falta confirmar alérgenos de:{' '}
+                  {pendingReviewIngredients.map((i) => i.name).join(', ')}
+                </p>
+              )}
+              <Button onClick={handleSaveDish} disabled={pendingReviewIngredients.length > 0}>
+                {editingDishId ? 'Guardar cambios' : 'Crear platillo'}
+              </Button>
+            </div>
           </>
         }
       >
@@ -1194,7 +1265,7 @@ export default function Menu() {
 
           <Field
             label="Ingredientes (obligatorio)"
-            hint="Busca en el catálogo o agrega uno nuevo. Requerido para validar alérgenos, ya que este platillo se prepara bajo demanda según el conteo de preórdenes del día."
+            hint="Busca en el catálogo o agrega uno nuevo. Cada ingrediente nuevo o sin confirmar deberá revisarse abajo antes de guardar."
           >
             <IngredientsInput
               value={dishForm.ingredients}
@@ -1206,6 +1277,22 @@ export default function Menu() {
               <p className="text-xs text-danger-600 mt-1.5">{dishErrors.ingredients}</p>
             )}
           </Field>
+
+          {selectedIngredientObjects.length > 0 && (
+            <Field label="Confirmación de alérgenos por ingrediente">
+              <div className="space-y-3">
+                {selectedIngredientObjects.map((ingredient) => (
+                  <IngredientAllergenReview
+                    key={ingredient.id}
+                    ingredient={ingredient}
+                    allergensCatalog={allergensCatalog}
+                    onToggleAllergen={toggleIngredientAllergen}
+                    onMarkNoAllergens={markIngredientNoAllergens}
+                  />
+                ))}
+              </div>
+            </Field>
+          )}
         </form>
       </Modal>
     </>
