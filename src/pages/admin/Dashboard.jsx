@@ -85,7 +85,8 @@ export default function Dashboard() {
   const [period, setPeriod] = useState("diario");
   const [selection, setSelection] = useState(null);
   const mockInstitutionId =
-    typeof selectedInstitution === "number"
+    typeof selectedInstitution === "number" &&
+    salesByInstitution[selectedInstitution]
       ? selectedInstitution
       : Object.keys(salesByInstitution)[0];
 

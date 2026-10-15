@@ -23,11 +23,11 @@ function downloadCsv(fileName, rows) {
 }
 
 export default function TeacherConsumptionReport() {
-  const { selectedInstitution } = useInstitution()
+  const { selectedInstitution, selectedInstitutionName } = useInstitution()
   const [exported, setExported] = useState(false)
 
   const currentMonthConsumption = teacherConsumption.filter(
-    (d) => d.period === CURRENT_MONTH && d.institution === selectedInstitution.name
+    (d) => d.period === CURRENT_MONTH && d.institution === selectedInstitutionName
   )
 
   const totalTeachers = currentMonthConsumption.length
@@ -41,7 +41,7 @@ export default function TeacherConsumptionReport() {
       ['Total general', '', '', totalConsumptions, totalAmount.toFixed(2)],
     ]
     downloadCsv(
-      `consumo-docentes-${selectedInstitution.id}-${CURRENT_MONTH.replace(' ', '-').toLowerCase()}.csv`,
+      `consumo-docentes-${selectedInstitution ?? 'propia'}-${CURRENT_MONTH.replace(' ', '-').toLowerCase()}.csv`,
       rows
     )
     setExported(true)
@@ -59,7 +59,7 @@ export default function TeacherConsumptionReport() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard icon={GraduationCap} tone="teal" label="Docentes con consumo" value={totalTeachers} hint={CURRENT_MONTH} />
           <StatCard icon={Wallet} tone="brand" label="Total a consolidar" value={`$${totalAmount.toFixed(2)}`} hint="Para descuento por RRHH" />
-          <StatCard icon={FileSpreadsheet} tone="success" label="Consumos registrados" value={totalConsumptions} hint={selectedInstitution.name} />
+          <StatCard icon={FileSpreadsheet} tone="success" label="Consumos registrados" value={totalConsumptions} hint={selectedInstitutionName} />
         </div>
 
         <Card padded={false}>
