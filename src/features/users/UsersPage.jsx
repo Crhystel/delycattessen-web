@@ -35,7 +35,7 @@ function DeleteStaffModal({ member, onDelete, onClose }) {
     <Modal
       open
       onClose={onClose}
-      title="Eliminar personal operativo"
+      title="Eliminar cuenta"
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
@@ -48,9 +48,10 @@ function DeleteStaffModal({ member, onDelete, onClose }) {
       }
     >
       <p className="text-sm text-ink-700">
-        ¿Eliminar definitivamente a{" "}
-        <span className="font-semibold">{fullName(member)}</span>? Esta acción
-        no se puede deshacer.
+        ¿Eliminar la cuenta de{" "}
+        <span className="font-semibold">{fullName(member)}</span>? Dejará de
+        poder iniciar sesión y su correo quedará libre. Se conserva su
+        historial de ventas. Esta acción no se puede deshacer.
       </p>
     </Modal>
   );
@@ -146,7 +147,6 @@ export default function UsersPage() {
           <StaffTable
             members={filteredList}
             loading={loading}
-            canManage={tab === "OPERATIONS_STAFF"}
             showInstitution={selectedInstitution === ALL_INSTITUTIONS}
             onEdit={(member) => setEditModal({ member })}
             onToggleStatus={toggleStatus}

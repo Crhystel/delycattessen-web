@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ToastProvider } from "./context/ToastContext";
 import { AuthProvider } from "./context/AuthContext";
 import { InstitutionProvider } from "./context/InstitutionContext";
-import { PromotionsProvider } from "./context/PromotionsContext";
 import { IsAdmin } from "./lib/permissions";
 import ToastContainer from "./components/ui/ToastContainer";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
@@ -21,32 +20,30 @@ export default function App() {
     <ToastProvider>
       <AuthProvider>
         <InstitutionProvider>
-          <PromotionsProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<LoginPage />} />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<LoginPage />} />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute permission={adminPermission}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="users" element={<UsersPage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="menu" element={<MenuPage />} />
                 <Route
-                  path="/admin"
-                  element={
-                    <ProtectedRoute permission={adminPermission}>
-                      <AdminLayout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Navigate to="dashboard" replace />} />
-                  <Route path="dashboard" element={<DashboardPage />} />
-                  <Route path="users" element={<UsersPage />} />
-                  <Route path="products" element={<ProductsPage />} />
-                  <Route path="menu" element={<MenuPage />} />
-                  <Route
-                    path="teachers"
-                    element={<TeacherConsumptionReportPage />}
-                  />
-                </Route>
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </PromotionsProvider>
+                  path="teachers"
+                  element={<TeacherConsumptionReportPage />}
+                />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
         </InstitutionProvider>
       </AuthProvider>
       <ToastContainer />

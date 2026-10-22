@@ -2,14 +2,13 @@ import { useState } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Button from "../../components/ui/Button";
-// TODO: mock products until promotions use real catalog products.
-import { products as promotableProducts } from "../../data/mockData";
-import { usePromotions } from "../../context/PromotionsContext";
 import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useIngredientCatalog } from "../catalog/hooks/useIngredientCatalog";
+import { useProducts } from "../catalog/hooks/useProducts";
 import { useDishes } from "./hooks/useDishes";
 import { useMonthlyMenus } from "./hooks/useMonthlyMenus";
+import { usePromotions } from "./hooks/usePromotions";
 import { sortMenusNewestFirst } from "./menuUtils";
 import MonthCard from "./components/MonthCard";
 import DishesTab from "./components/DishesTab";
@@ -26,7 +25,14 @@ const TABS = [
 
 export default function MenuPage() {
   const { selectedInstitution } = useInstitution();
-  const { promotions, setPromotions } = usePromotions();
+  const {
+    promotions,
+    loading: promotionsLoading,
+    savePromotion,
+    removePromotion,
+  } = usePromotions();
+  // Only catalog products can be promoted (never monthly menu dishes).
+  const { products } = useProducts();
   const catalog = useIngredientCatalog();
   const { dishes, saveDish, removeDish } = useDishes();
   const {
@@ -49,18 +55,6 @@ export default function MenuPage() {
 
   async function handleDeleteDish(id) {
     if (await removeDish(id)) removeDishFromDays(id);
-  }
-
-  function savePromo(payload, id) {
-    setPromotions((prev) =>
-      id
-        ? prev.map((p) => (p.id === id ? { ...p, ...payload } : p))
-        : [{ id: `pr${Date.now()}`, ...payload }, ...prev],
-    );
-  }
-
-  function deletePromo(id) {
-    setPromotions((prev) => prev.filter((p) => p.id !== id));
   }
 
   return (
@@ -120,7 +114,6 @@ export default function MenuPage() {
               <MonthCard
                 key={menu.id}
                 menu={menu}
-                promos={promotions}
                 dishes={dishes}
                 notified={notifiedMenuId === menu.id}
                 showInstitution={showInstitution}
@@ -144,9 +137,10 @@ export default function MenuPage() {
         {tab === "promos" && (
           <PromotionsTab
             promotions={promotions}
-            products={promotableProducts}
+            loading={promotionsLoading}
+            showInstitution={showInstitution}
             onEdit={(promo) => setPromoModal({ promo })}
-            onDelete={deletePromo}
+            onDelete={removePromotion}
           />
         )}
       </main>
@@ -169,8 +163,8 @@ export default function MenuPage() {
         <PromotionFormModal
           promo={promoModal.promo}
           promotions={promotions}
-          products={promotableProducts}
-          onSave={savePromo}
+          products={products}
+          onSave={savePromotion}
           onClose={() => setPromoModal(null)}
         />
       )}
