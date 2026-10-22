@@ -16,9 +16,16 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Claude Code local config (not shared with the repo)
+.claude/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.env
+
+# Local AI agent guide (not shared yet)
+AGENTS.md
