@@ -6,13 +6,12 @@ import {
   Undo2,
   Mail,
   UtensilsCrossed,
-  Tag,
   ClipboardList,
 } from "lucide-react";
 import Card from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
 import Badge from "../../../components/ui/Badge";
-import { monthStats, productWithPromo } from "../menuUtils";
+import { monthStats } from "../menuUtils";
 import MonthlyCalendar from "./MonthlyCalendar";
 import DayEditPanel from "./DayEditPanel";
 
@@ -32,7 +31,6 @@ function StatChip({ icon: Icon, label, value }) {
 
 export default function MonthCard({
   menu,
-  promos,
   dishes,
   notified,
   showInstitution,
@@ -42,18 +40,11 @@ export default function MonthCard({
 }) {
   const [selectedDate, setSelectedDate] = useState(null);
 
-  const stats = monthStats(menu, promos);
+  const stats = monthStats(menu);
   const percentage =
     stats.totalDays > 0
       ? Math.round((stats.configuredDays / stats.totalDays) * 100)
       : 0;
-  const datesWithPromo = new Set(
-    stats.businessDays
-      .filter((d) =>
-        (menu.days[d.date] || []).some((id) => productWithPromo(id, promos)),
-      )
-      .map((d) => d.date),
-  );
   const dayDishes = selectedDate ? menu.days[selectedDate] || [] : [];
   const dayPreorders = selectedDate
     ? (menu.preorders || {})[selectedDate] || 0
@@ -129,7 +120,7 @@ export default function MonthCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <StatChip
             icon={CalendarCheck}
             label="Días configurados"
@@ -139,11 +130,6 @@ export default function MonthCard({
             icon={UtensilsCrossed}
             label="Platos registrados"
             value={stats.registeredDishes}
-          />
-          <StatChip
-            icon={Tag}
-            label="Promociones activas"
-            value={stats.activePromos}
           />
           <StatChip
             icon={ClipboardList}
@@ -161,7 +147,6 @@ export default function MonthCard({
               preordersMap={menu.preorders}
               onEditDay={setSelectedDate}
               selectedDate={selectedDate}
-              datesWithPromo={datesWithPromo}
             />
           </div>
           <div className="flex-1 min-w-0">
@@ -176,8 +161,8 @@ export default function MonthCard({
               />
             ) : (
               <div className="h-full min-h-[180px] flex items-center justify-center rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-6">
-                Selecciona un día del calendario para ver y editar sus platos,
-                bebidas y promociones.
+                Selecciona un día del calendario para ver y editar sus platos
+                y bebidas.
               </div>
             )}
           </div>

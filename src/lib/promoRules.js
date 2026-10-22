@@ -1,35 +1,39 @@
 // Pure date/promotion rules. No React here so they can be reused and tested.
-// TODO: TODAY is pinned to match the mock promotions in data/mockData.js.
-// Replace it with `new Date()` when promotions come from the API.
-export const TODAY = new Date("2026-07-06");
+// Dates are "YYYY-MM-DD" strings, so comparing them as text keeps date order.
 
 export function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
-// TODAY is built from an ISO string (UTC midnight); we use UTC getters so
-// the date doesn't shift a day depending on the browser's timezone.
-export function formatDateISO(date) {
-  return `${date.getUTCFullYear()}-${pad2(date.getUTCMonth() + 1)}-${pad2(date.getUTCDate())}`;
+// Local calendar date: promotions are day-based and the backend evaluates
+// them on Ecuador's date, which is the admin's local date.
+export function toISODate(date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
-export function addDays(date, days) {
-  const copy = new Date(date);
-  copy.setUTCDate(copy.getUTCDate() + days);
-  return copy;
+export function todayISO() {
+  return toISODate(new Date());
 }
 
-// Once endDate passes, the promotion automatically becomes "Vencida": no
-// manual status is stored anywhere, it's always derived from the date.
-export function calculatePromoStatus(promo) {
-  return new Date(promo.endDate) < TODAY ? "Vencida" : "Activa";
+export function addDaysISO(isoDate, days) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return toISODate(new Date(year, month - 1, day + days));
 }
 
-export function activePromoFor(productId, promotions, excludeId) {
+// A product cannot be in two promotions whose periods overlap, so it never
+// has two active promotions at once. Keep in sync with
+// PromotionService.validate_products_available (backend).
+export function conflictingPromoFor(
+  productId,
+  promotions,
+  { startDate, endDate },
+  excludeId,
+) {
   return promotions.find(
     (p) =>
       p.id !== excludeId &&
       p.products.includes(productId) &&
-      calculatePromoStatus(p) === "Activa",
+      p.startDate <= endDate &&
+      p.endDate >= startDate,
   );
 }

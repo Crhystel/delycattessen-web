@@ -1,33 +1,32 @@
 import { Pencil, Trash2, EyeOff } from "lucide-react";
 import Badge from "../../../components/ui/Badge";
 import { isImageSource } from "../../../lib/images";
-import { activePromoFor } from "../../../lib/promoRules";
 
-function PriceCell({ product, promo }) {
-  if (!promo) {
+// `discount_percentage`/`final_price` come from the backend and only reflect a
+// promotion in force today, so an expired one shows the original price again.
+function PriceCell({ product }) {
+  if (!product.discount_percentage) {
     return (
       <span className="text-ink-700 font-medium">
         ${Number(product.price).toFixed(2)}
       </span>
     );
   }
-  const discounted = product.price * (1 - promo.discount / 100);
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-ink-300 line-through text-xs">
         ${Number(product.price).toFixed(2)}
       </span>
       <span className="text-teal-700 font-semibold">
-        ${discounted.toFixed(2)}
+        ${Number(product.final_price).toFixed(2)}
       </span>
-      <Badge tone="success">-{promo.discount}%</Badge>
+      <Badge tone="success">-{product.discount_percentage}%</Badge>
     </div>
   );
 }
 
 function ProductRow({
   product,
-  promo,
   showInstitution,
   onEdit,
   onDelete,
@@ -76,7 +75,7 @@ function ProductRow({
         <td className="px-5 py-3 text-ink-500">{product.institution_name}</td>
       )}
       <td className="px-5 py-3">
-        <PriceCell product={product} promo={promo} />
+        <PriceCell product={product} />
       </td>
       <td className="px-5 py-3 text-ink-700">{product.stock} u.</td>
       <td className="px-5 py-3">
@@ -112,7 +111,6 @@ function ProductRow({
 export default function ProductsTable({
   products,
   loading,
-  promotions,
   showInstitution,
   onEdit,
   onDelete,
@@ -152,7 +150,6 @@ export default function ProductsTable({
               <ProductRow
                 key={product.id}
                 product={product}
-                promo={activePromoFor(product.id, promotions)}
                 showInstitution={showInstitution}
                 onEdit={onEdit}
                 onDelete={onDelete}

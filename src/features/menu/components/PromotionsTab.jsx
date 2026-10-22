@@ -1,42 +1,47 @@
-import { Pencil, Trash2, RefreshCw } from "lucide-react";
+import { Pencil, Trash2, RefreshCw, Tag } from "lucide-react";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
-import { isImageSource } from "../../../lib/images";
-import { calculatePromoStatus } from "../../../lib/promoRules";
+import { PROMO_STATUS } from "../menuUtils";
 
-function PromotionRow({ promo, products, onEdit, onDelete }) {
-  const status = calculatePromoStatus(promo);
-  const applicable = promo.products
-    .map((id) => products.find((p) => p.id === id))
-    .filter(Boolean);
+function PromotionRow({ promo, showInstitution, onEdit, onDelete }) {
+  const status = PROMO_STATUS[promo.status] ?? PROMO_STATUS.EXPIRED;
+
+  function handleDelete() {
+    if (
+      window.confirm(
+        "¿Eliminar esta promoción? Sus productos volverán a su precio original.",
+      )
+    )
+      onDelete(promo.id);
+  }
 
   return (
     <tr className="border-b border-ink-100 last:border-0 hover:bg-ink-50/60">
       <td className="px-5 py-3">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 overflow-hidden">
-            {isImageSource(promo.image) ? (
+            {promo.image ? (
               <img
                 src={promo.image}
                 alt=""
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-lg">{promo.image}</span>
+              <Tag size={15} />
             )}
           </div>
           <div className="flex flex-wrap gap-1">
-            {applicable.map((p) => (
-              <Badge key={p.id} tone="neutral">
-                {p.image} {p.name}
+            {promo.productNames.map((name, i) => (
+              <Badge key={promo.products[i]} tone="neutral">
+                {name}
               </Badge>
             ))}
-            {applicable.length === 0 && (
-              <span className="text-ink-300">—</span>
-            )}
           </div>
         </div>
       </td>
+      {showInstitution && (
+        <td className="px-5 py-3 text-ink-500">{promo.institutionName}</td>
+      )}
       <td className="px-5 py-3">
         <span className="inline-flex items-center bg-teal-50 text-teal-700 text-xs font-bold px-2.5 py-1 rounded-full">
           -{promo.discount}%
@@ -45,9 +50,7 @@ function PromotionRow({ promo, products, onEdit, onDelete }) {
       <td className="px-5 py-3 text-ink-500">{promo.startDate}</td>
       <td className="px-5 py-3 text-ink-500">{promo.endDate}</td>
       <td className="px-5 py-3">
-        <Badge tone={status === "Activa" ? "success" : "neutral"}>
-          {status}
-        </Badge>
+        <Badge tone={status.tone}>{status.label}</Badge>
       </td>
       <td className="px-5 py-3 text-right">
         <div className="flex justify-end gap-1.5">
@@ -58,7 +61,7 @@ function PromotionRow({ promo, products, onEdit, onDelete }) {
             <Pencil size={15} />
           </button>
           <button
-            onClick={() => onDelete(promo.id)}
+            onClick={handleDelete}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
           >
             <Trash2 size={15} />
@@ -71,10 +74,13 @@ function PromotionRow({ promo, products, onEdit, onDelete }) {
 
 export default function PromotionsTab({
   promotions,
-  products,
+  loading,
+  showInstitution,
   onEdit,
   onDelete,
 }) {
+  const colSpan = showInstitution ? 7 : 6;
+
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-2.5 bg-ink-50/70 border border-ink-100 text-xs text-ink-500 rounded-xl px-3.5 py-3">
@@ -89,6 +95,9 @@ export default function PromotionsTab({
             <thead>
               <tr className="text-left text-ink-500 border-b border-ink-100">
                 <th className="px-5 py-3 font-medium">Producto</th>
+                {showInstitution && (
+                  <th className="px-5 py-3 font-medium">Sede</th>
+                )}
                 <th className="px-5 py-3 font-medium">Descuento</th>
                 <th className="px-5 py-3 font-medium">Fecha inicio</th>
                 <th className="px-5 py-3 font-medium">Fecha vencimiento</th>
@@ -97,19 +106,30 @@ export default function PromotionsTab({
               </tr>
             </thead>
             <tbody>
-              {promotions.map((promo) => (
-                <PromotionRow
-                  key={promo.id}
-                  promo={promo}
-                  products={products}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
-              ))}
-              {promotions.length === 0 && (
+              {loading && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={colSpan}
+                    className="px-5 py-8 text-center text-ink-300"
+                  >
+                    Cargando promociones...
+                  </td>
+                </tr>
+              )}
+              {!loading &&
+                promotions.map((promo) => (
+                  <PromotionRow
+                    key={promo.id}
+                    promo={promo}
+                    showInstitution={showInstitution}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                  />
+                ))}
+              {!loading && promotions.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={colSpan}
                     className="px-5 py-8 text-center text-ink-300"
                   >
                     No hay promociones registradas.
