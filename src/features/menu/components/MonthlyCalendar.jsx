@@ -12,7 +12,6 @@ export default function MonthlyCalendar({
   preordersMap,
   onEditDay,
   selectedDate,
-  datesWithPromo,
 }) {
   const monthDays = getMonthWeekdays(year, monthIndex);
   const offset = monthDays.length > 0 ? monthDays[0].weekday - 1 : 0; // offset within the Mon-Fri week
@@ -38,7 +37,6 @@ export default function MonthlyCalendar({
           const dayPreorders = preordersMap?.[info.date] || 0;
           const status = dayStatus(count);
           const selected = selectedDate === info.date;
-          const hasPromo = datesWithPromo?.has(info.date);
 
           return (
             <button
@@ -59,12 +57,6 @@ export default function MonthlyCalendar({
                 <span className="text-[9px] font-semibold text-brand-600">
                   {dayPreorders} preórd.
                 </span>
-              )}
-              {hasPromo && (
-                <span
-                  className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-secondary-500"
-                  title="Incluye producto en promoción"
-                />
               )}
             </button>
           );

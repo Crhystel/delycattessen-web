@@ -134,39 +134,6 @@ export const monthlyMenu = [
   },
 ]
 
-// Promotions (RF-08): a promotion can cover one or several products
-// (even the whole catalog), but the same product cannot be in more
-// than one active promotion at a time. The status (Activa/Vencida) is
-// calculated automatically from the validity date, it isn't stored — once
-// it expires, the original price is restored with no manual intervention and
-// the product becomes available again for a new promotion.
-export const promotions = [
-  {
-    id: 'pr1',
-    products: ['p1', 'p3'],
-    image: '🥪',
-    discount: 15,
-    startDate: '2026-07-01',
-    endDate: '2026-07-15',
-  },
-  {
-    id: 'pr2',
-    products: ['p5'],
-    image: '🥣',
-    discount: 10,
-    startDate: '2026-06-10',
-    endDate: '2026-06-20',
-  },
-  {
-    id: 'pr3',
-    products: ['p4'],
-    image: '🍫',
-    discount: 20,
-    startDate: '2026-05-01',
-    endDate: '2026-05-15',
-  },
-]
-
 export const wastage = [
   { id: 'm1', product: 'Almuerzo Ejecutivo', quantity: 3, reason: 'Vencimiento de porción', date: '2026-06-15' },
   { id: 'm2', product: 'Brownie de Chocolate', quantity: 5, reason: 'Rotura en transporte', date: '2026-06-14' },

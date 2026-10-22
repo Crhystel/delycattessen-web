@@ -48,7 +48,7 @@ src/
 │
 ├─ components/ui/   Piezas visuales genéricas (Button, Modal, Card, Field, Badge…)
 ├─ layouts/         Marco de la app: AdminLayout, Sidebar, Topbar
-├─ context/         Estado global (sesión, sede, avisos, promociones)
+├─ context/         Estado global (sesión, sede, avisos)
 ├─ hooks/           Hooks genéricos sin tema de negocio (useAsyncData)
 ├─ lib/             Lógica pura sin React (tokenStore, permissions, eventBus, helpers)
 ├─ services/        apiClient.js: el único cliente HTTP de toda la app
@@ -129,9 +129,8 @@ Las rutas `/admin/*` están protegidas por `ProtectedRoute` con la regla `IsAdmi
 | `AuthContext` | Sesión: usuario, rol, login, logout, aviso de sesión expirada |
 | `InstitutionContext` | Lista de sedes y la sede seleccionada (`ALL_INSTITUTIONS` = vista consolidada) |
 | `ToastContext` | Avisos de éxito / error / advertencia |
-| `PromotionsContext` | Promociones (aún con datos de prueba) |
 
-Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`, `usePromotions()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Promotions → Router.
+Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Router. Las promociones no son estado global: las carga el hook `features/menu/hooks/usePromotions.js`, y el catálogo muestra el descuento vigente que ya viene en cada producto (`discount_percentage`, `final_price`).
 
 ## 8. Sesión y autenticación
 
@@ -172,6 +171,6 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 
 ## 12. Estado actual y pendientes
 
-- **Mocks temporales** (`src/data/mockData.js`): Dashboard, Consumo de docentes y Promociones aún no tienen endpoint; cada uso está marcado con `// TODO`. Al conectarlos se crea su `services.js` + hook y se borra el mock.
+- **Mocks temporales** (`src/data/mockData.js`): Dashboard y Consumo de docentes aún no tienen endpoint; cada uso está marcado con `// TODO`. Al conectarlos se crea su `services.js` + hook y se borra el mock.
 - `features/users/staffRules.js` espeja las reglas del backend sobre qué cuentas de personal se pueden editar y aún no está conectado a la pantalla.
 - `DashboardPage.jsx` es el archivo más largo (~400 líneas) y está pendiente de dividir cuando se conecte a datos reales.

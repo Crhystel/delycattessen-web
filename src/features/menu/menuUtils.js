@@ -1,4 +1,4 @@
-import { pad2, calculatePromoStatus } from "../../lib/promoRules";
+import { pad2 } from "../../lib/promoRules";
 
 const MONTH_NAMES = [
   "Enero",
@@ -60,16 +60,9 @@ export const DAY_STATUS_STYLES = {
   complete: "border-teal-500 bg-teal-50 text-teal-700",
 };
 
-export function productWithPromo(productId, promosList) {
-  return promosList.find(
-    (p) =>
-      p.products.includes(productId) && calculatePromoStatus(p) === "Activa",
-  );
-}
-
-// Quick stats for the month: planned days, total dishes, active promos and
-// total preorders received within the month's date range.
-export function monthStats(m, promosList) {
+// Quick stats for the month: planned days, total dishes and total preorders
+// received within the month's date range.
+export function monthStats(m) {
   const businessDays = getMonthWeekdays(m.year, m.monthIndex);
   const configuredDays = businessDays.filter(
     (d) => (m.days[d.date] || []).length > 0,
@@ -78,15 +71,6 @@ export function monthStats(m, promosList) {
     (acc, d) => acc + (m.days[d.date] || []).length,
     0,
   );
-  const monthStart = `${m.year}-${pad2(m.monthIndex + 1)}-01`;
-  const lastDay = new Date(m.year, m.monthIndex + 1, 0).getDate();
-  const monthEnd = `${m.year}-${pad2(m.monthIndex + 1)}-${pad2(lastDay)}`;
-  const activePromos = promosList.filter(
-    (p) =>
-      calculatePromoStatus(p) === "Activa" &&
-      p.startDate <= monthEnd &&
-      p.endDate >= monthStart,
-  ).length;
   const totalPreorders =
     m.totalPreorders !== undefined
       ? m.totalPreorders
@@ -95,7 +79,6 @@ export function monthStats(m, promosList) {
     businessDays,
     configuredDays,
     registeredDishes,
-    activePromos,
     totalPreorders,
     totalDays: businessDays.length,
   };
@@ -141,6 +124,28 @@ export function adaptDish(d) {
     allergens: d.allergens || [],
     isActive: d.is_active,
     institutionName: d.institution_name || null,
+  };
+}
+
+// Labels of the status the backend derives from the promotion dates.
+export const PROMO_STATUS = {
+  ACTIVE: { label: "Activa", tone: "success" },
+  SCHEDULED: { label: "Programada", tone: "warning" },
+  EXPIRED: { label: "Vencida", tone: "neutral" },
+};
+
+// API promotion -> shape used by the UI.
+export function adaptPromotion(p) {
+  return {
+    id: p.id,
+    products: p.products.map((product) => product.id),
+    productNames: p.products.map((product) => product.name),
+    discount: p.discount_percentage,
+    startDate: p.start_date,
+    endDate: p.end_date,
+    image: p.image || null,
+    status: p.status,
+    institutionName: p.institution_name || null,
   };
 }
 

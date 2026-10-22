@@ -4,7 +4,6 @@ import Topbar from "../../layouts/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import ImagePreviewOverlay from "../../components/ui/ImagePreviewOverlay";
-import { usePromotions } from "../../context/PromotionsContext";
 import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useProducts } from "./hooks/useProducts";
@@ -14,7 +13,6 @@ import ProductFormModal from "./components/ProductFormModal";
 import ManageAllergensModal from "./components/ManageAllergensModal";
 
 export default function ProductsPage() {
-  const { promotions } = usePromotions();
   const { selectedInstitution } = useInstitution();
   const { products, loading, saveProduct, removeProduct } = useProducts();
   const catalog = useIngredientCatalog();
@@ -81,7 +79,6 @@ export default function ProductsPage() {
           <ProductsTable
             products={filtered}
             loading={loading}
-            promotions={promotions}
             showInstitution={selectedInstitution === ALL_INSTITUTIONS}
             onEdit={openForm}
             onDelete={removeProduct}
