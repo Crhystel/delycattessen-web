@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
 import { staffToForm } from "../staffForm";
+import { canEditEmail } from "../staffRules";
 import StaffFields from "./StaffFields";
 
 // Rendered only while open, with the member to edit.
@@ -29,7 +30,11 @@ export default function EditStaffModal({ member, onUpdate, onClose }) {
     <Modal
       open
       onClose={onClose}
-      title="Editar personal operativo"
+      title={
+        member.role === "TEACHER"
+          ? "Editar usuario de crédito"
+          : "Editar personal operativo"
+      }
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
@@ -42,7 +47,12 @@ export default function EditStaffModal({ member, onUpdate, onClose }) {
       }
     >
       <form onSubmit={handleSubmit}>
-        <StaffFields form={form} onChange={handleChange} error={error} />
+        <StaffFields
+          form={form}
+          onChange={handleChange}
+          error={error}
+          emailDisabled={!canEditEmail(member)}
+        />
       </form>
     </Modal>
   );

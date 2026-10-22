@@ -75,7 +75,7 @@ Ejemplo real, `features/users/`:
 | `services.js` | `getStaff`, `createStaff`, `updateStaff`, `deleteStaff` |
 | `components/StaffTable.jsx` | Tabla de usuarios |
 | `components/CreateStaffModal.jsx`, `EditStaffModal.jsx` | Formularios |
-| `staffForm.js`, `staffRules.js` | Nombre completo y reglas de qué cuentas se pueden editar |
+| `staffForm.js`, `staffRules.js` | Nombre completo y reglas de qué cuentas se pueden editar, eliminar o cambiar de correo (espejo de `CanManageStaffAccount`; mantener sincronizado con el backend) |
 
 ## 4. Capas y reglas de dependencia
 
@@ -173,5 +173,4 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 ## 12. Estado actual y pendientes
 
 - **Mocks temporales** (`src/data/mockData.js`): Dashboard, Consumo de docentes y Promociones aún no tienen endpoint; cada uso está marcado con `// TODO`. Al conectarlos se crea su `services.js` + hook y se borra el mock.
-- `features/users/staffRules.js` espeja las reglas del backend sobre qué cuentas de personal se pueden editar y aún no está conectado a la pantalla.
 - `DashboardPage.jsx` es el archivo más largo (~400 líneas) y está pendiente de dividir cuando se conecte a datos reales.
