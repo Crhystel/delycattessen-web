@@ -4,11 +4,33 @@ import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
 import { Field, Input } from "../../../components/ui/Field";
 import { isImageSource } from "../../../lib/images";
-import { activePromoFor } from "../../../lib/promoRules";
-import { EMPTY_PROMO_FORM, promoToForm } from "../promoForm";
+import {
+  TODAY,
+  formatDateISO,
+  addDays,
+  activePromoFor,
+} from "../../../lib/promoRules";
 
-// Mount only while open (fresh `key` per opening) so its state starts from
-// `promo` (edit) or an empty form (create).
+const EMPTY_PROMO_FORM = {
+  products: [],
+  image: "🎉",
+  discount: "",
+  startDate: formatDateISO(TODAY),
+  endDate: formatDateISO(addDays(TODAY, 7)),
+};
+
+function promoToForm(promo) {
+  return {
+    products: [...promo.products],
+    image: promo.image,
+    discount: String(promo.discount),
+    startDate: promo.startDate,
+    endDate: promo.endDate,
+  };
+}
+
+// Rendered only while open, so its state starts from `promo` (edit) or an
+// empty form (create) every time.
 // `promotions` are all current promos (to detect a product already promoted);
 // `products` are the products a promotion can apply to.
 export default function PromotionFormModal({

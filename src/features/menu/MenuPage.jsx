@@ -4,13 +4,14 @@ import Topbar from "../../layouts/Topbar";
 import Button from "../../components/ui/Button";
 // TODO: mock products until promotions use real catalog products.
 import { products as promotableProducts } from "../../data/mockData";
-import { usePromotions } from "../../hooks/usePromotions";
-import { useInstitution } from "../../hooks/useInstitution";
+import { usePromotions } from "../../context/PromotionsContext";
+import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useIngredientCatalog } from "../catalog/hooks/useIngredientCatalog";
 import { useDishes } from "./hooks/useDishes";
 import { useMonthlyMenus } from "./hooks/useMonthlyMenus";
-import MonthlyMenuTab from "./components/MonthlyMenuTab";
+import { sortMenusNewestFirst } from "./menuUtils";
+import MonthCard from "./components/MonthCard";
 import DishesTab from "./components/DishesTab";
 import PromotionsTab from "./components/PromotionsTab";
 import NewMonthModal from "./components/NewMonthModal";
@@ -39,10 +40,10 @@ export default function MenuPage() {
   } = useMonthlyMenus();
 
   const [tab, setTab] = useState("monthly");
-  // Each modal is mounted only while open; the key remounts it per opening.
-  const [newMonthModal, setNewMonthModal] = useState(null);
-  const [dishModal, setDishModal] = useState(null); // { key, dish }
-  const [promoModal, setPromoModal] = useState(null); // { key, promo }
+  // Each modal is rendered only while its state is set.
+  const [newMonthModal, setNewMonthModal] = useState(false);
+  const [dishModal, setDishModal] = useState(null); // { dish }
+  const [promoModal, setPromoModal] = useState(null); // { promo }
 
   const showInstitution = selectedInstitution === ALL_INSTITUTIONS;
 
@@ -90,7 +91,7 @@ export default function MenuPage() {
           {tab === "monthly" && (
             <Button
               icon={Plus}
-              onClick={() => setNewMonthModal({ key: Date.now() })}
+              onClick={() => setNewMonthModal(true)}
             >
               Nuevo menú mensual
             </Button>
@@ -98,7 +99,7 @@ export default function MenuPage() {
           {tab === "dishes" && (
             <Button
               icon={UtensilsCrossed}
-              onClick={() => setDishModal({ key: Date.now(), dish: null })}
+              onClick={() => setDishModal({ dish: null })}
             >
               Nuevo platillo
             </Button>
@@ -106,7 +107,7 @@ export default function MenuPage() {
           {tab === "promos" && (
             <Button
               icon={Plus}
-              onClick={() => setPromoModal({ key: Date.now(), promo: null })}
+              onClick={() => setPromoModal({ promo: null })}
             >
               Nueva promoción
             </Button>
@@ -114,21 +115,29 @@ export default function MenuPage() {
         </div>
 
         {tab === "monthly" && (
-          <MonthlyMenuTab
-            menus={menus}
-            dishes={dishes}
-            notifiedMenuId={notifiedMenuId}
-            showInstitution={showInstitution}
-            onToggleDish={toggleDayDish}
-            onPublish={publishMenu}
-            onUnpublish={unpublishMenu}
-          />
+          <div className="space-y-5">
+            {sortMenusNewestFirst(menus).map((menu) => (
+              <MonthCard
+                key={menu.id}
+                menu={menu}
+                promos={promotions}
+                dishes={dishes}
+                notified={notifiedMenuId === menu.id}
+                showInstitution={showInstitution}
+                onToggleDish={(date, dishId) =>
+                  toggleDayDish(menu.id, date, dishId)
+                }
+                onPublish={() => publishMenu(menu.id)}
+                onUnpublish={() => unpublishMenu(menu.id)}
+              />
+            ))}
+          </div>
         )}
         {tab === "dishes" && (
           <DishesTab
             dishes={dishes}
             showInstitution={showInstitution}
-            onEdit={(dish) => setDishModal({ key: Date.now(), dish })}
+            onEdit={(dish) => setDishModal({ dish })}
             onDelete={handleDeleteDish}
           />
         )}
@@ -136,7 +145,7 @@ export default function MenuPage() {
           <PromotionsTab
             promotions={promotions}
             products={promotableProducts}
-            onEdit={(promo) => setPromoModal({ key: Date.now(), promo })}
+            onEdit={(promo) => setPromoModal({ promo })}
             onDelete={deletePromo}
           />
         )}
@@ -144,14 +153,12 @@ export default function MenuPage() {
 
       {newMonthModal && (
         <NewMonthModal
-          key={newMonthModal.key}
           onCreate={createMenu}
-          onClose={() => setNewMonthModal(null)}
+          onClose={() => setNewMonthModal(false)}
         />
       )}
       {dishModal && (
         <DishFormModal
-          key={dishModal.key}
           dish={dishModal.dish}
           catalog={catalog}
           onSave={saveDish}
@@ -160,7 +167,6 @@ export default function MenuPage() {
       )}
       {promoModal && (
         <PromotionFormModal
-          key={promoModal.key}
           promo={promoModal.promo}
           promotions={promotions}
           products={promotableProducts}

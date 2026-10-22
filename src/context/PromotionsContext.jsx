@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 // TODO: mock data until the promotions API exists (see data/mockData.js).
 import { promotions as initialPromotions } from "../data/mockData";
-import { PromotionsContext } from "./contexts";
 
-export default function PromotionsProvider({ children }) {
+const PromotionsContext = createContext(null);
+
+export function PromotionsProvider({ children }) {
   const [promotions, setPromotions] = useState(initialPromotions);
   const value = useMemo(() => ({ promotions, setPromotions }), [promotions]);
 
@@ -12,4 +13,11 @@ export default function PromotionsProvider({ children }) {
       {children}
     </PromotionsContext.Provider>
   );
+}
+
+export function usePromotions() {
+  const ctx = useContext(PromotionsContext);
+  if (!ctx)
+    throw new Error("usePromotions must be used within PromotionsProvider");
+  return ctx;
 }

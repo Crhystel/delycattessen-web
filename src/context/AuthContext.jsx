@@ -1,10 +1,22 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import { login as loginRequest, getMe } from "../features/auth/services";
 import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
 import { tokenStore } from "../lib/tokenStore";
-import { AuthContext } from "./contexts";
 
-export default function AuthProvider({ children }) {
+const AuthContext = createContext(null);
+
+// Session rules: the stored session survives closing the app and is erased
+// ONLY by logout() (the user signing out). If the server rejects the session
+// (refresh token expired) we just leave the panel in memory and ask for a new
+// login; the stored data is overwritten by that login, never wiped silently.
+export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => tokenStore.getAccess());
   const [user, setUser] = useState(() => tokenStore.getProfile());
   // Only loading when a stored session has to be validated on mount.
@@ -26,8 +38,8 @@ export default function AuthProvider({ children }) {
 
   const clearSessionExpired = useCallback(() => setSessionExpired(false), []);
 
-  // Returning visitor / page reload: re-fetch the profile so permission
-  // checks like IsAdmin reflect the server, not the cached copy.
+  // Returning visitor: refresh the profile from the server. A network error
+  // keeps the cached profile; a rejected session arrives as SESSION_EXPIRED.
   useEffect(() => {
     if (!tokenStore.getAccess()) return undefined;
     let cancelled = false;
@@ -35,32 +47,30 @@ export default function AuthProvider({ children }) {
       .then((data) => {
         if (!cancelled) updateUser(data);
       })
-      .catch(() => {
-        if (!cancelled) logout();
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancelled) setIsLoadingUser(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [logout, updateUser]);
+  }, [updateUser]);
 
   useEffect(
     () =>
       authEvents.on(SESSION_EXPIRED, () => {
         setSessionExpired(true);
-        logout();
+        setToken(null);
+        setUser(null);
       }),
-    [logout],
+    [],
   );
 
   const login = useCallback(
     async (email, password) => {
       const data = await loginRequest(email, password);
       tokenStore.setTokens(data);
-      const me = await getMe();
-      updateUser(me);
+      updateUser(await getMe());
       setToken(data.access);
       setSessionExpired(false);
       return data;
@@ -94,4 +104,10 @@ export default function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 }

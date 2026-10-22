@@ -5,7 +5,7 @@ import { EMPTY_STAFF_FORM } from "../staffForm";
 import CredentialsPanel from "./CredentialsPanel";
 import StaffFields from "./StaffFields";
 
-// Mount only while open (fresh `key` per opening) so the form starts empty.
+// Rendered only while open, so the form starts empty every time.
 // After a successful creation it shows the temporary credentials.
 export default function CreateStaffModal({ role, onCreate, onClose }) {
   const [form, setForm] = useState(EMPTY_STAFF_FORM);

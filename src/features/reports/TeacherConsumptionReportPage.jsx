@@ -6,7 +6,7 @@ import StatCard from '../../components/ui/StatCard'
 import Button from '../../components/ui/Button'
 // TODO: mock data until the teacher consumption endpoint exists.
 import { teacherConsumption } from '../../data/mockData'
-import { useInstitution } from '../../hooks/useInstitution'
+import { useInstitution } from '../../context/InstitutionContext'
 
 const CURRENT_MONTH = 'Junio 2026'
 

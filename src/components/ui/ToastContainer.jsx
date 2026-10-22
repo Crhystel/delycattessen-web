@@ -1,5 +1,5 @@
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from "lucide-react";
-import { useToastList } from "../../hooks/useToast";
+import { useToastList } from "../../context/ToastContext";
 
 const STYLES = {
   success: {

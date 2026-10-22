@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useAsyncData } from "../../../hooks/useAsyncData";
-import { useInstitution } from "../../../hooks/useInstitution";
-import { useToast } from "../../../hooks/useToast";
+import { useInstitution } from "../../../context/InstitutionContext";
+import { useToast } from "../../../context/ToastContext";
 import {
   getMonthlyMenus,
   createMonthlyMenu,

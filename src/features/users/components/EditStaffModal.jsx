@@ -4,7 +4,7 @@ import Modal from "../../../components/ui/Modal";
 import { staffToForm } from "../staffForm";
 import StaffFields from "./StaffFields";
 
-// Mount only while open (fresh `key` per opening) with the member to edit.
+// Rendered only while open, with the member to edit.
 export default function EditStaffModal({ member, onUpdate, onClose }) {
   const [form, setForm] = useState(() => staffToForm(member));
   const [error, setError] = useState("");

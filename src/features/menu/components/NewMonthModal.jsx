@@ -4,7 +4,7 @@ import Modal from "../../../components/ui/Modal";
 import { Field, Input } from "../../../components/ui/Field";
 
 // Only picks the month; the planning itself happens in the main view.
-// Mount only while open so the field starts empty.
+// Rendered only while open, so the field starts empty every time.
 export default function NewMonthModal({ onCreate, onClose }) {
   const [month, setMonth] = useState(""); // 'YYYY-MM'
   const [error, setError] = useState("");

@@ -1,20 +1,26 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { ChefHat } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { Field, Input } from "../../components/ui/Field";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "../../context/AuthContext";
 import ForgotPasswordModal from "./components/ForgotPasswordModal";
 import PasswordInput from "../../components/ui/PasswordInput";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, sessionExpired, clearSessionExpired } = useAuth();
+  const { login, sessionExpired, clearSessionExpired, isAuthenticated, role } =
+    useAuth();
   const [email, setEmail] = useState("");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // A saved session goes straight to the panel (only admins have one).
+  if (isAuthenticated && role === "ADMIN") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();

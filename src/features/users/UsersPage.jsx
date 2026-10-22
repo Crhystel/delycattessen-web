@@ -3,14 +3,14 @@ import { Plus, Search, GraduationCap, Headset } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
-import { useInstitution } from "../../hooks/useInstitution";
+import Modal from "../../components/ui/Modal";
+import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useStaff } from "./hooks/useStaff";
 import { fullName } from "./staffForm";
 import StaffTable from "./components/StaffTable";
 import CreateStaffModal from "./components/CreateStaffModal";
 import EditStaffModal from "./components/EditStaffModal";
-import DeleteStaffModal from "./components/DeleteStaffModal";
 
 const TABS = [
   {
@@ -20,6 +20,41 @@ const TABS = [
   },
   { id: "OPERATIONS_STAFF", label: "Personal Operativo", icon: Headset },
 ];
+
+function DeleteStaffModal({ member, onDelete, onClose }) {
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    const deleted = await onDelete(member);
+    setDeleting(false);
+    if (deleted) onClose();
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Eliminar personal operativo"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button variant="danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Eliminando..." : "Eliminar"}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm text-ink-700">
+        ¿Eliminar definitivamente a{" "}
+        <span className="font-semibold">{fullName(member)}</span>? Esta acción
+        no se puede deshacer.
+      </p>
+    </Modal>
+  );
+}
 
 export default function UsersPage() {
   const { selectedInstitution, institutions } = useInstitution();
@@ -35,8 +70,8 @@ export default function UsersPage() {
 
   const [tab, setTab] = useState("TEACHER");
   const [query, setQuery] = useState("");
-  // Each modal is mounted only while open; the key remounts it per opening.
-  const [createModal, setCreateModal] = useState(null);
+  // Each modal is rendered only while its state is set.
+  const [createModal, setCreateModal] = useState(false);
   const [editModal, setEditModal] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
 
@@ -81,7 +116,7 @@ export default function UsersPage() {
             ))}
           </div>
 
-          <Button icon={Plus} onClick={() => setCreateModal({ key: Date.now() })}>
+          <Button icon={Plus} onClick={() => setCreateModal(true)}>
             {tab === "TEACHER" ? "Nuevo usuario de crédito" : "Nuevo cajero"}
           </Button>
         </div>
@@ -113,24 +148,22 @@ export default function UsersPage() {
             loading={loading}
             canManage={tab === "OPERATIONS_STAFF"}
             showInstitution={selectedInstitution === ALL_INSTITUTIONS}
-            onEdit={(member) => setEditModal({ key: Date.now(), member })}
+            onEdit={(member) => setEditModal({ member })}
             onToggleStatus={toggleStatus}
-            onDelete={(member) => setDeleteModal({ key: Date.now(), member })}
+            onDelete={(member) => setDeleteModal({ member })}
           />
         </Card>
       </main>
 
       {createModal && (
         <CreateStaffModal
-          key={createModal.key}
           role={tab}
           onCreate={createMember}
-          onClose={() => setCreateModal(null)}
+          onClose={() => setCreateModal(false)}
         />
       )}
       {editModal && (
         <EditStaffModal
-          key={editModal.key}
           member={editModal.member}
           onUpdate={updateMember}
           onClose={() => setEditModal(null)}
@@ -138,7 +171,6 @@ export default function UsersPage() {
       )}
       {deleteModal && (
         <DeleteStaffModal
-          key={deleteModal.key}
           member={deleteModal.member}
           onDelete={removeMember}
           onClose={() => setDeleteModal(null)}

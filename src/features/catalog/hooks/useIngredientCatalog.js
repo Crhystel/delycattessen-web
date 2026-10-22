@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useAsyncData } from "../../../hooks/useAsyncData";
-import { useToast } from "../../../hooks/useToast";
+import { useToast } from "../../../context/ToastContext";
 import {
   getIngredients,
   createIngredient,

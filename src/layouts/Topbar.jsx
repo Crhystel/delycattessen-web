@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Building2, ChevronDown, Check } from "lucide-react";
-import { useInstitution } from "../hooks/useInstitution";
-import { useAuth } from "../hooks/useAuth";
+import { useInstitution } from "../context/InstitutionContext";
+import { useAuth } from "../context/AuthContext";
 import { ALL_INSTITUTIONS } from "../lib/institutions";
 
 export default function Topbar({ title, subtitle }) {

@@ -24,6 +24,7 @@ function write(key, value) {
 
 export const tokenStore = {
   getAccess: () => read(ACCESS_KEY),
+  getRefresh: () => read(REFRESH_KEY),
   setTokens({ access, refresh }) {
     write(ACCESS_KEY, access);
     write(REFRESH_KEY, refresh);

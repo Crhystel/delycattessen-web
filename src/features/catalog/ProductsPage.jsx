@@ -4,8 +4,8 @@ import Topbar from "../../layouts/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import ImagePreviewOverlay from "../../components/ui/ImagePreviewOverlay";
-import { usePromotions } from "../../hooks/usePromotions";
-import { useInstitution } from "../../hooks/useInstitution";
+import { usePromotions } from "../../context/PromotionsContext";
+import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useProducts } from "./hooks/useProducts";
 import { useIngredientCatalog } from "./hooks/useIngredientCatalog";
@@ -20,8 +20,7 @@ export default function ProductsPage() {
   const catalog = useIngredientCatalog();
 
   const [query, setQuery] = useState("");
-  // `form` is { key, product } while the product form is open (product null =
-  // create). The key remounts the modal so each opening starts fresh.
+  // `form` is { product } while the product form is open (product null = create).
   const [form, setForm] = useState(null);
   const [manageAllergensOpen, setManageAllergensOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -35,7 +34,7 @@ export default function ProductsPage() {
   );
 
   function openForm(product = null) {
-    setForm({ key: Date.now(), product });
+    setForm({ product });
   }
 
   return (
@@ -93,7 +92,6 @@ export default function ProductsPage() {
 
       {form && (
         <ProductFormModal
-          key={form.key}
           product={form.product}
           catalog={catalog}
           onSave={saveProduct}

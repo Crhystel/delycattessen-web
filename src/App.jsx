@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ToastProvider from "./context/ToastProvider";
-import AuthProvider from "./context/AuthProvider";
-import InstitutionProvider from "./context/InstitutionProvider";
-import PromotionsProvider from "./context/PromotionsProvider";
+import { ToastProvider } from "./context/ToastContext";
+import { AuthProvider } from "./context/AuthContext";
+import { InstitutionProvider } from "./context/InstitutionContext";
+import { PromotionsProvider } from "./context/PromotionsContext";
 import { IsAdmin } from "./lib/permissions";
 import ToastContainer from "./components/ui/ToastContainer";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useToast } from "./useToast";
+import { useToast } from "../context/ToastContext";
 
 // Loads data through `fetcher` and tracks loading/error, ignoring responses
 // that arrive after the component re-ran or unmounted.

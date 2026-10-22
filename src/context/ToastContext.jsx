@@ -1,9 +1,16 @@
-import { useState, useCallback, useMemo } from "react";
-import { ToastContext } from "./contexts";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
+
+const ToastContext = createContext(null);
 
 const AUTO_DISMISS_MS = 5000;
 
-export default function ToastProvider({ children }) {
+export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
   const removeToast = useCallback((id) => {
@@ -38,4 +45,21 @@ export default function ToastProvider({ children }) {
   );
 
   return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+}
+
+function useToastContext() {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  return ctx;
+}
+
+// Stable { success, error, warning, info } helpers; safe in effect deps.
+export function useToast() {
+  return useToastContext().toast;
+}
+
+// Only for ToastContainer: the list of visible toasts.
+export function useToastList() {
+  const { toasts, removeToast } = useToastContext();
+  return { toasts, removeToast };
 }

@@ -25,7 +25,7 @@ import StatCard from "../../components/ui/StatCard";
 import Card, { CardHeader } from "../../components/ui/Card";
 // TODO: mock data until the sales analytics endpoint exists.
 import { salesByInstitution } from "../../data/mockData";
-import { useInstitution } from "../../hooks/useInstitution";
+import { useInstitution } from "../../context/InstitutionContext";
 
 const COLOR_DIGITAL = "#14b8a6";
 const COLOR_CASH = "#FF6E00";

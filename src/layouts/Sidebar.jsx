@@ -8,7 +8,7 @@ import {
   LogOut,
   Users,
 } from 'lucide-react'
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../context/AuthContext'
 
 const links = [
   { to: '/admin/dashboard', label: 'Analítica de Ventas', icon: LayoutDashboard },

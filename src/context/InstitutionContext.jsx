@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { createContext, useContext, useState, useMemo } from "react";
 import { getInstitutions } from "../features/institutions/services";
-import { useAuth } from "../hooks/useAuth";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { ALL_INSTITUTIONS } from "../lib/institutions";
-import { InstitutionContext } from "./contexts";
+import { useAuth } from "./AuthContext";
 
-export default function InstitutionProvider({ children }) {
+const InstitutionContext = createContext(null);
+
+export function InstitutionProvider({ children }) {
   const { token, user } = useAuth();
   const [selectedInstitution, setSelectedInstitution] = useState(null);
 
@@ -55,4 +56,11 @@ export default function InstitutionProvider({ children }) {
       {children}
     </InstitutionContext.Provider>
   );
+}
+
+export function useInstitution() {
+  const ctx = useContext(InstitutionContext);
+  if (!ctx)
+    throw new Error("useInstitution must be used within InstitutionProvider");
+  return ctx;
 }
