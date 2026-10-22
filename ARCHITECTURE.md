@@ -77,6 +77,18 @@ Ejemplo real, `features/users/`:
 | `components/CreateStaffModal.jsx`, `EditStaffModal.jsx` | Formularios |
 | `staffForm.js`, `staffRules.js` | Nombre completo y reglas de qué cuentas se pueden editar, eliminar o cambiar de correo (espejo de `CanManageStaffAccount`; mantener sincronizado con el backend) |
 
+`features/dashboard/` (analítica de ventas, datos reales de `/api/pos/analytics/`):
+
+| Archivo | Responsabilidad |
+| --- | --- |
+| `DashboardPage.jsx` | Orquesta selector de periodo, KPIs, gráficos y detalle |
+| `hooks/useSalesDashboard.js` | Periodo, granularidad y barra seleccionada; carga resumen, serie y top de productos y los refresca cada 30 s |
+| `services.js` | `getSalesSummary`, `getSalesTimeseries`, `getTopProducts` |
+| `components/` | `PeriodSelector`, `KpiGrid`, `SalesTrendChart`, `ChannelBreakdown`, `TopProductsList`, `BucketDetailPanel`, `LastUpdated`, `ChangeBadge` |
+| `dashboardUtils.js`, `chartPalette.js` | Rangos de fechas, formatos y colores de canal (variables del tema) |
+
+Reglas del dashboard: el refresco automático usa `useAsyncData({ refreshInterval })` (sin parpadeo; se pausa con la pestaña oculta). El detalle al hacer clic en una barra pide los mismos endpoints con el rango de esa barra. Canales: efectivo, saldo, crédito docente y pre-órdenes; las reglas de las métricas están en el `ARCHITECTURE.md` del backend (§5.7).
+
 ## 4. Capas y reglas de dependencia
 
 Cada capa tiene un solo trabajo y solo puede apoyarse en las que están debajo:
@@ -173,4 +185,3 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 
 - **Mocks temporales** (`src/data/mockData.js`): Dashboard y Consumo de docentes aún no tienen endpoint; cada uso está marcado con `// TODO`. Al conectarlos se crea su `services.js` + hook y se borra el mock.
 - `features/users/staffRules.js` espeja las reglas del backend sobre qué cuentas de personal se pueden editar y aún no está conectado a la pantalla.
-- `DashboardPage.jsx` es el archivo más largo (~400 líneas) y está pendiente de dividir cuando se conecte a datos reales.
