@@ -1,10 +1,14 @@
 import { UserCheck, UserX, Pencil, Trash2 } from "lucide-react";
 import Badge from "../../../components/ui/Badge";
 import { fullName } from "../staffForm";
+import {
+  canDeleteStaff,
+  canEditStaff,
+  isManagedByOwner,
+} from "../staffRules";
 
 function StaffRow({
   member,
-  canManage,
   showInstitution,
   onEdit,
   onToggleStatus,
@@ -26,7 +30,12 @@ function StaffRow({
       </td>
       <td className="px-5 py-3 text-right">
         <div className="flex items-center justify-end gap-2">
-          {canManage && (
+          {isManagedByOwner(member) && (
+            <span className="text-xs text-ink-300">
+              Gestiona su propio perfil
+            </span>
+          )}
+          {canEditStaff(member) && (
             <button
               onClick={() => onEdit(member)}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-ink-600 bg-ink-50 hover:bg-ink-100 transition-colors"
@@ -46,7 +55,7 @@ function StaffRow({
             {member.is_active ? <UserX size={13} /> : <UserCheck size={13} />}
             {member.is_active ? "Desactivar" : "Activar"}
           </button>
-          {canManage && (
+          {canDeleteStaff(member) && (
             <button
               onClick={() => onDelete(member)}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-danger-600 bg-danger-50 hover:bg-danger-100 transition-colors"
@@ -61,11 +70,10 @@ function StaffRow({
   );
 }
 
-// `canManage`: edit/delete are only offered for operations staff (RF-03).
+// Edit/delete are offered per account according to staffRules.
 export default function StaffTable({
   members,
   loading,
-  canManage,
   showInstitution,
   onEdit,
   onToggleStatus,
@@ -103,7 +111,6 @@ export default function StaffTable({
               <StaffRow
                 key={member.id}
                 member={member}
-                canManage={canManage}
                 showInstitution={showInstitution}
                 onEdit={onEdit}
                 onToggleStatus={onToggleStatus}

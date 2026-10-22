@@ -75,7 +75,7 @@ Ejemplo real, `features/users/`:
 | `services.js` | `getStaff`, `createStaff`, `updateStaff`, `deleteStaff` |
 | `components/StaffTable.jsx` | Tabla de usuarios |
 | `components/CreateStaffModal.jsx`, `EditStaffModal.jsx` | Formularios |
-| `staffForm.js`, `staffRules.js` | Nombre completo y reglas de qué cuentas se pueden editar |
+| `staffForm.js`, `staffRules.js` | Nombre completo y reglas de qué cuentas se pueden editar, eliminar o cambiar de correo (espejo de `CanManageStaffAccount`; mantener sincronizado con el backend) |
 
 ## 4. Capas y reglas de dependencia
 

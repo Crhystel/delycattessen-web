@@ -6,6 +6,7 @@ export default function StaffFields({
   onChange,
   error,
   withPlaceholders = false,
+  emailDisabled = false,
 }) {
   const ph = (text) => (withPlaceholders ? text : undefined);
 
@@ -45,7 +46,13 @@ export default function StaffFields({
           value={form.email}
           onChange={(e) => onChange("email", e.target.value)}
           placeholder={ph("nombre@delycattessen.com")}
+          disabled={emailDisabled}
         />
+        {emailDisabled && (
+          <p className="text-xs text-ink-500 mt-1.5">
+            El correo de una cuenta activa solo lo puede cambiar su propietario.
+          </p>
+        )}
         {error && <p className="text-xs text-danger-600 mt-1.5">{error}</p>}
       </Field>
     </>
