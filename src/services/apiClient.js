@@ -1,4 +1,5 @@
 import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
+import { tokenStore } from "../lib/tokenStore";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -9,10 +10,13 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
+  // The bearer token is read from the session store, never passed by callers.
+  // Public endpoints (login, password reset) opt out with `auth: false`.
   async request(
     endpoint,
-    { method = "GET", body, token, isFormData = false } = {},
+    { method = "GET", body, isFormData = false, auth = true } = {},
   ) {
+    const token = auth ? this.getToken() : null;
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method,
       headers: this.buildHeaders(token, isFormData),
@@ -22,6 +26,10 @@ class ApiClient {
     if (!response.ok)
       return this.onError(response, data, { hadToken: !!token });
     return data;
+  }
+
+  getToken() {
+    return tokenStore.getAccess();
   }
 
   buildHeaders(token, isFormData) {

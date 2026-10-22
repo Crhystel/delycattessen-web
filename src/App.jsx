@@ -1,19 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ToastProvider } from "./context/ToastContext";
-import { AuthProvider } from "./context/AuthContext";
-import { InstitutionProvider } from "./context/InstitutionContext";
-import { PromotionsProvider } from "./context/PromotionsContext";
+import ToastProvider from "./context/ToastProvider";
+import AuthProvider from "./context/AuthProvider";
+import InstitutionProvider from "./context/InstitutionProvider";
+import PromotionsProvider from "./context/PromotionsProvider";
 import { IsAdmin } from "./lib/permissions";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
 import ToastContainer from "./components/ui/ToastContainer";
-import Login from "./pages/Login";
+import ProtectedRoute from "./features/auth/components/ProtectedRoute";
+import LoginPage from "./features/auth/LoginPage";
 import AdminLayout from "./layouts/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
-import Users from "./pages/admin/Users";
-import Products from "./pages/admin/Products";
-import Menu from "./pages/admin/Menu";
-import TeacherConsumptionReport from "./pages/admin/TeacherConsumptionReport";
-import ProductCreate from "./pages/admin/ProductCreate";
+import DashboardPage from "./features/dashboard/DashboardPage";
+import UsersPage from "./features/users/UsersPage";
+import ProductsPage from "./features/catalog/ProductsPage";
+import MenuPage from "./features/menu/MenuPage";
+import TeacherConsumptionReportPage from "./features/reports/TeacherConsumptionReportPage";
+
+const adminPermission = new IsAdmin();
 
 export default function App() {
   return (
@@ -23,24 +24,23 @@ export default function App() {
           <PromotionsProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Login />} />
+                <Route path="/" element={<LoginPage />} />
                 <Route
                   path="/admin"
                   element={
-                    <ProtectedRoute permission={new IsAdmin()}>
+                    <ProtectedRoute permission={adminPermission}>
                       <AdminLayout />
                     </ProtectedRoute>
                   }
                 >
                   <Route index element={<Navigate to="dashboard" replace />} />
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="users" element={<Users />} />
-                  <Route path="products" element={<Products />} />
-                  <Route path="menu" element={<Menu />} />
-                  <Route path="products/create" element={<ProductCreate />} />
+                  <Route path="dashboard" element={<DashboardPage />} />
+                  <Route path="users" element={<UsersPage />} />
+                  <Route path="products" element={<ProductsPage />} />
+                  <Route path="menu" element={<MenuPage />} />
                   <Route
                     path="teachers"
-                    element={<TeacherConsumptionReport />}
+                    element={<TeacherConsumptionReportPage />}
                   />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
