@@ -37,3 +37,10 @@ export function conflictingPromoFor(
       p.endDate >= startDate,
   );
 }
+
+// Price with a percentage discount, rounded half up to cents. Keep in sync
+// with PromotionService.discounted_price (backend).
+export function discountedPrice(price, discount) {
+  const cents = Math.round(Number(price) * (100 - Number(discount)));
+  return cents / 100;
+}

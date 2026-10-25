@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Upload, X as XIcon, RefreshCw, Tag, UtensilsCrossed } from "lucide-react";
+import { Upload, RefreshCw, Tag } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
 import { Field, Input } from "../../../components/ui/Field";
-import { isImageSource } from "../../../lib/images";
 import { conflictingPromoFor } from "../../../lib/promoRules";
 import {
   emptyPromotionForm,
@@ -11,44 +10,7 @@ import {
   validatePromotion,
   formToPromotionPayload,
 } from "../promotionForm";
-
-function ProductOption({ product, chosen, blocked, onToggle }) {
-  return (
-    <button
-      type="button"
-      disabled={blocked}
-      onClick={onToggle}
-      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-        chosen
-          ? "border-teal-500 bg-teal-50"
-          : blocked
-            ? "border-ink-100 bg-ink-50 opacity-50 cursor-not-allowed"
-            : "border-ink-100 hover:bg-ink-50"
-      }`}
-    >
-      {isImageSource(product.image) ? (
-        <img
-          src={product.image}
-          alt=""
-          className="w-7 h-7 rounded-md object-cover shrink-0"
-        />
-      ) : (
-        <UtensilsCrossed size={16} className="text-ink-400 shrink-0" />
-      )}
-      <span className="text-xs font-medium text-ink-900 truncate">
-        {product.name}
-        {blocked && (
-          <span className="block text-[10px] text-ink-400">
-            Ya en otra promoción
-          </span>
-        )}
-      </span>
-      {chosen && (
-        <XIcon size={13} className="text-teal-600 ml-auto shrink-0" />
-      )}
-    </button>
-  );
-}
+import DiscountProductOption from "./DiscountProductOption";
 
 // Rendered only while open, so its state starts from `promo` (edit) or an
 // empty form (create) every time.
@@ -119,7 +81,7 @@ export default function PromotionFormModal({
     <Modal
       open
       onClose={onClose}
-      title={promo ? "Editar promoción" : "Nueva promoción"}
+      title={promo ? "Editar descuento" : "Nuevo descuento"}
       width="max-w-xl"
       footer={
         <>
@@ -127,15 +89,15 @@ export default function PromotionFormModal({
             Cancelar
           </Button>
           <Button onClick={handleSubmit} disabled={isSaving}>
-            {promo ? "Guardar cambios" : "Crear promoción"}
+            {promo ? "Guardar cambios" : "Crear descuento"}
           </Button>
         </>
       }
     >
       <form onSubmit={handleSubmit}>
         <Field
-          label="Productos en promoción"
-          hint="Puedes aplicar la promoción a uno, varios o todos los productos del catálogo. Un producto no puede tener dos promociones en las mismas fechas."
+          label="Productos con descuento"
+          hint="Puedes aplicar el descuento a uno, varios o todos los productos del catálogo. Un producto no puede tener dos descuentos en las mismas fechas."
         >
           <div className="flex justify-end mb-2">
             <button
@@ -160,9 +122,10 @@ export default function PromotionFormModal({
           ) : (
             <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
               {products.map((p) => (
-                <ProductOption
+                <DiscountProductOption
                   key={p.id}
                   product={p}
+                  discount={Number(form.discount)}
                   chosen={form.products.includes(p.id)}
                   blocked={isBlocked(p.id)}
                   onToggle={() => toggleProduct(p.id)}
@@ -175,7 +138,7 @@ export default function PromotionFormModal({
           )}
         </Field>
 
-        <Field label="Imagen de la promoción">
+        <Field label="Imagen del descuento">
           <div className="flex items-center gap-3">
             {form.image ? (
               <img
@@ -237,7 +200,7 @@ export default function PromotionFormModal({
         <div className="flex items-start gap-2.5 bg-ink-50 text-ink-500 text-xs rounded-xl px-3.5 py-3 mt-1">
           <RefreshCw size={14} className="shrink-0 mt-0.5" />
           Al pasar la fecha "Fin", el precio original del producto se restaura
-          automáticamente y queda disponible para una nueva promoción.
+          automáticamente y queda disponible para un nuevo descuento.
         </div>
       </form>
     </Modal>

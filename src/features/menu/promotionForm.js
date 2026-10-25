@@ -35,14 +35,14 @@ export function validatePromotion(form, promotions, promoId) {
   const errors = {};
   const discount = Number(form.discount);
   if (form.products.length === 0)
-    errors.products = "Selecciona al menos un producto para la promoción.";
+    errors.products = "Selecciona al menos un producto para el descuento.";
   else if (
     form.products.some((id) =>
       conflictingPromoFor(id, promotions, form, promoId),
     )
   )
     errors.products =
-      "Uno de los productos elegidos ya tiene una promoción en esas fechas.";
+      "Uno de los productos elegidos ya tiene un descuento en esas fechas.";
   if (!Number.isInteger(discount) || discount < 1 || discount > 99)
     errors.discount = "Ingresa un descuento entero entre 1 y 99.";
   if (!form.startDate || !form.endDate)

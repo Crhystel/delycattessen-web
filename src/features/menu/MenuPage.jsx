@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Button from "../../components/ui/Button";
+import SegmentedTabs from "../../components/ui/SegmentedTabs";
 import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useIngredientCatalog } from "../catalog/hooks/useIngredientCatalog";
@@ -9,28 +10,34 @@ import { useProducts } from "../catalog/hooks/useProducts";
 import { useDishes } from "./hooks/useDishes";
 import { useMonthlyMenus } from "./hooks/useMonthlyMenus";
 import { usePromotions } from "./hooks/usePromotions";
+import { useCombos } from "./hooks/useCombos";
 import { sortMenusNewestFirst } from "./menuUtils";
 import MonthCard from "./components/MonthCard";
 import DishesTab from "./components/DishesTab";
-import PromotionsTab from "./components/PromotionsTab";
+import OffersTab from "./components/OffersTab";
 import NewMonthModal from "./components/NewMonthModal";
 import DishFormModal from "./components/DishFormModal";
 import PromotionFormModal from "./components/PromotionFormModal";
+import ComboFormModal from "./components/ComboFormModal";
 
 const TABS = [
   { id: "monthly", label: "Menú Mensual" },
   { id: "dishes", label: "Platillos" },
-  { id: "promos", label: "Promociones" },
+  { id: "offers", label: "Descuentos y Promociones" },
 ];
+
+// "New ..." button of each (sub)tab.
+const NEW_ACTIONS = {
+  monthly: { label: "Nuevo menú mensual", icon: Plus },
+  dishes: { label: "Nuevo platillo", icon: UtensilsCrossed },
+  discounts: { label: "Nuevo descuento", icon: Plus },
+  combos: { label: "Nueva promoción", icon: Plus },
+};
 
 export default function MenuPage() {
   const { selectedInstitution } = useInstitution();
-  const {
-    promotions,
-    loading: promotionsLoading,
-    savePromotion,
-    removePromotion,
-  } = usePromotions();
+  const discounts = usePromotions();
+  const combos = useCombos();
   // Only catalog products can be promoted (never monthly menu dishes).
   const { products } = useProducts();
   const catalog = useIngredientCatalog();
@@ -46,12 +53,22 @@ export default function MenuPage() {
   } = useMonthlyMenus();
 
   const [tab, setTab] = useState("monthly");
+  const [offerTab, setOfferTab] = useState("discounts");
   // Each modal is rendered only while its state is set.
   const [newMonthModal, setNewMonthModal] = useState(false);
   const [dishModal, setDishModal] = useState(null); // { dish }
   const [promoModal, setPromoModal] = useState(null); // { promo }
+  const [comboModal, setComboModal] = useState(null); // { combo }
 
   const showInstitution = selectedInstitution === ALL_INSTITUTIONS;
+  const actionId = tab === "offers" ? offerTab : tab;
+  const action = NEW_ACTIONS[actionId];
+  const openNew = {
+    monthly: () => setNewMonthModal(true),
+    dishes: () => setDishModal({ dish: null }),
+    discounts: () => setPromoModal({ promo: null }),
+    combos: () => setComboModal({ combo: null }),
+  };
 
   async function handleDeleteDish(id) {
     if (await removeDish(id)) removeDishFromDays(id);
@@ -66,46 +83,11 @@ export default function MenuPage() {
 
       <main className="p-6 space-y-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex bg-white border border-ink-100 rounded-xl p-1 w-fit text-sm">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  tab === t.id
-                    ? "bg-teal-500 text-white"
-                    : "text-ink-500 hover:text-ink-900"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />
 
-          {tab === "monthly" && (
-            <Button
-              icon={Plus}
-              onClick={() => setNewMonthModal(true)}
-            >
-              Nuevo menú mensual
-            </Button>
-          )}
-          {tab === "dishes" && (
-            <Button
-              icon={UtensilsCrossed}
-              onClick={() => setDishModal({ dish: null })}
-            >
-              Nuevo platillo
-            </Button>
-          )}
-          {tab === "promos" && (
-            <Button
-              icon={Plus}
-              onClick={() => setPromoModal({ promo: null })}
-            >
-              Nueva promoción
-            </Button>
-          )}
+          <Button icon={action.icon} onClick={openNew[actionId]}>
+            {action.label}
+          </Button>
         </div>
 
         {tab === "monthly" && (
@@ -134,13 +116,15 @@ export default function MenuPage() {
             onDelete={handleDeleteDish}
           />
         )}
-        {tab === "promos" && (
-          <PromotionsTab
-            promotions={promotions}
-            loading={promotionsLoading}
+        {tab === "offers" && (
+          <OffersTab
+            view={offerTab}
+            onViewChange={setOfferTab}
+            discounts={discounts}
+            combos={combos}
             showInstitution={showInstitution}
-            onEdit={(promo) => setPromoModal({ promo })}
-            onDelete={removePromotion}
+            onEditDiscount={(promo) => setPromoModal({ promo })}
+            onEditCombo={(combo) => setComboModal({ combo })}
           />
         )}
       </main>
@@ -162,10 +146,18 @@ export default function MenuPage() {
       {promoModal && (
         <PromotionFormModal
           promo={promoModal.promo}
-          promotions={promotions}
+          promotions={discounts.promotions}
           products={products}
-          onSave={savePromotion}
+          onSave={discounts.savePromotion}
           onClose={() => setPromoModal(null)}
+        />
+      )}
+      {comboModal && (
+        <ComboFormModal
+          combo={comboModal.combo}
+          products={products}
+          onSave={combos.saveCombo}
+          onClose={() => setComboModal(null)}
         />
       )}
     </>

@@ -149,6 +149,27 @@ export function adaptPromotion(p) {
   };
 }
 
+// API combo -> shape used by the UI.
+export function adaptCombo(c) {
+  return {
+    id: c.id,
+    name: c.name,
+    price: Number(c.price),
+    regularPrice: Number(c.regular_price),
+    items: c.items.map((item) => ({
+      productId: item.product_id,
+      name: item.name,
+      price: Number(item.price),
+      quantity: item.quantity,
+    })),
+    startDate: c.start_date,
+    endDate: c.end_date,
+    image: c.image || null,
+    status: c.status,
+    institutionName: c.institution_name || null,
+  };
+}
+
 // Newest month first.
 export function sortMenusNewestFirst(menus) {
   return [...menus].sort(

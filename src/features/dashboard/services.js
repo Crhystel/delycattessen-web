@@ -12,6 +12,11 @@ export function getSalesTimeseries(range, granularity, institution) {
   );
 }
 
+// Combos sold at the POS, ranked apart from the products, with the totals.
+export function getTopCombos(range, institution) {
+  return apiClient(`/pos/analytics/top-combos/${buildQuery(range, institution)}`);
+}
+
 export function getTopProducts(range, institution) {
   return apiClient(
     `/pos/analytics/top-products/${buildQuery(range, institution)}`,

@@ -18,8 +18,12 @@ const METRICS = [
   },
 ];
 
-// Top products by revenue or by units. `top` is the top-products response, or null.
-export default function TopProductsList({ top }) {
+// Top products (or combos) by revenue or by units. `top` is a ranking
+// response ({ by_revenue, by_units }), or null while loading.
+export default function TopProductsList({
+  top,
+  emptyText = "Sin productos vendidos en este periodo.",
+}) {
   const [metricId, setMetricId] = useState("revenue");
   const metric = METRICS.find(({ id }) => id === metricId);
   const rows = top ? top[metric.ranking] : [];
@@ -45,7 +49,7 @@ export default function TopProductsList({ top }) {
       </div>
       {rows.length === 0 ? (
         <p className="text-sm text-ink-300 py-6 text-center">
-          {top ? "Sin productos vendidos en este periodo." : "Cargando..."}
+          {top ? emptyText : "Cargando..."}
         </p>
       ) : (
         <ol className="space-y-3">

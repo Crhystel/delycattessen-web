@@ -1,7 +1,12 @@
 import { useCallback, useState } from "react";
 import { useAsyncData } from "../../../hooks/useAsyncData";
 import { useInstitution } from "../../../context/InstitutionContext";
-import { getSalesSummary, getSalesTimeseries, getTopProducts } from "../services";
+import {
+  getSalesSummary,
+  getSalesTimeseries,
+  getTopCombos,
+  getTopProducts,
+} from "../services";
 import {
   DEFAULT_PRESET,
   REFRESH_INTERVAL_MS,
@@ -41,6 +46,10 @@ export function useSalesDashboard() {
     () => getTopProducts(range, selectedInstitution),
     [range, selectedInstitution],
   );
+  const fetchCombos = useCallback(
+    () => getTopCombos(range, selectedInstitution),
+    [range, selectedInstitution],
+  );
   const fetchBucketSummary = useCallback(
     () =>
       getSalesSummary(
@@ -64,6 +73,7 @@ export function useSalesDashboard() {
     initialData: [],
   });
   const top = useAsyncData(fetchTop, LIVE);
+  const combos = useAsyncData(fetchCombos, LIVE);
   const bucketSummary = useAsyncData(fetchBucketSummary, {
     ...LIVE,
     enabled: Boolean(bucket),
@@ -110,11 +120,13 @@ export function useSalesDashboard() {
   const reloadSummary = summary.reload;
   const reloadTimeseries = timeseries.reload;
   const reloadTop = top.reload;
+  const reloadCombos = combos.reload;
   const reload = useCallback(() => {
     reloadSummary();
     reloadTimeseries();
     reloadTop();
-  }, [reloadSummary, reloadTimeseries, reloadTop]);
+    reloadCombos();
+  }, [reloadSummary, reloadTimeseries, reloadTop, reloadCombos]);
 
   return {
     presetId,
@@ -123,6 +135,7 @@ export function useSalesDashboard() {
     summary,
     timeseries,
     top,
+    combos,
     bucket,
     bucketSummary,
     bucketTop,

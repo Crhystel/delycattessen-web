@@ -24,6 +24,26 @@ function buildPromotionFormData(data) {
   return formData;
 }
 
+function buildComboFormData(data) {
+  const formData = new FormData();
+  formData.append("name", data.name);
+  formData.append("price", data.price);
+  formData.append("start_date", data.startDate);
+  formData.append("end_date", data.endDate);
+  // Sent as JSON text: the request is multipart because it carries the image.
+  formData.append(
+    "items",
+    JSON.stringify(
+      data.items.map(({ productId, quantity }) => ({
+        product_id: productId,
+        quantity,
+      })),
+    ),
+  );
+  if (data.imageFile) formData.append("image", data.imageFile);
+  return formData;
+}
+
 const dishesUrl = (institution) =>
   `/catalog/dishes/${institutionQuery(institution)}`;
 const dishUrl = (id, institution) =>
@@ -34,6 +54,10 @@ const promotionsUrl = (institution) =>
   `/catalog/promotions/${institutionQuery(institution)}`;
 const promotionUrl = (id, institution) =>
   `/catalog/promotions/${id}/${institutionQuery(institution)}`;
+const combosUrl = (institution) =>
+  `/catalog/combos/${institutionQuery(institution)}`;
+const comboUrl = (id, institution) =>
+  `/catalog/combos/${id}/${institutionQuery(institution)}`;
 const menuActionUrl = (menuId, action, institution) =>
   `/catalog/monthly_menus/${menuId}/${action}/${institutionQuery(institution)}`;
 
@@ -113,4 +137,28 @@ export function updatePromotion(id, data, institution) {
 
 export function deletePromotion(id, institution) {
   return apiClient(promotionUrl(id, institution), { method: "DELETE" });
+}
+
+export function getCombos(institution) {
+  return apiClient(combosUrl(institution));
+}
+
+export function createCombo(data, institution) {
+  return apiClient(combosUrl(institution), {
+    method: "POST",
+    body: buildComboFormData(data),
+    isFormData: true,
+  });
+}
+
+export function updateCombo(id, data, institution) {
+  return apiClient(comboUrl(id, institution), {
+    method: "PATCH",
+    body: buildComboFormData(data),
+    isFormData: true,
+  });
+}
+
+export function deleteCombo(id, institution) {
+  return apiClient(comboUrl(id, institution), { method: "DELETE" });
 }

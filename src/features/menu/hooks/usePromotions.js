@@ -25,7 +25,7 @@ export function usePromotions() {
     reload,
   } = useAsyncData(fetchPromotions, {
     initialData: [],
-    errorTitle: "No se pudieron cargar las promociones",
+    errorTitle: "No se pudieron cargar los descuentos",
   });
 
   // Resolves true when saved so the form can close itself. Reloads instead of
@@ -36,20 +36,20 @@ export function usePromotions() {
         if (id) {
           await updatePromotion(id, payload, selectedInstitution);
           toast.success(
-            "Promoción actualizada",
+            "Descuento actualizado",
             "Los cambios se guardaron correctamente.",
           );
         } else {
           await createPromotion(payload, selectedInstitution);
           toast.success(
-            "Promoción creada",
+            "Descuento creado",
             "El descuento se aplicará a los productos durante su vigencia.",
           );
         }
         reload();
         return true;
       } catch (err) {
-        toast.error("No se pudo guardar la promoción", err.message);
+        toast.error("No se pudo guardar el descuento", err.message);
         return false;
       }
     },
@@ -62,13 +62,13 @@ export function usePromotions() {
       try {
         await deletePromotion(id, selectedInstitution);
         toast.success(
-          "Promoción eliminada",
+          "Descuento eliminado",
           "Los productos vuelven a su precio original.",
         );
         reload();
         return true;
       } catch (err) {
-        toast.error("No se pudo eliminar la promoción", err.message);
+        toast.error("No se pudo eliminar el descuento", err.message);
         return false;
       }
     },

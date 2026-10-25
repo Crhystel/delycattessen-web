@@ -9,7 +9,7 @@ function PromotionRow({ promo, showInstitution, onEdit, onDelete }) {
   function handleDelete() {
     if (
       window.confirm(
-        "¿Eliminar esta promoción? Sus productos volverán a su precio original.",
+        "¿Eliminar este descuento? Sus productos volverán a su precio original.",
       )
     )
       onDelete(promo.id);
@@ -112,7 +112,7 @@ export default function PromotionsTab({
                     colSpan={colSpan}
                     className="px-5 py-8 text-center text-ink-300"
                   >
-                    Cargando promociones...
+                    Cargando descuentos...
                   </td>
                 </tr>
               )}
@@ -132,7 +132,7 @@ export default function PromotionsTab({
                     colSpan={colSpan}
                     className="px-5 py-8 text-center text-ink-300"
                   >
-                    No hay promociones registradas.
+                    No hay descuentos registrados.
                   </td>
                 </tr>
               )}

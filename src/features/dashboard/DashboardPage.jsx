@@ -5,7 +5,13 @@ import Card, { CardHeader } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import { useInstitution } from "../../context/InstitutionContext";
 import { useSalesDashboard } from "./hooks/useSalesDashboard";
-import { hasSales, rangeLabel, toChartData } from "./dashboardUtils";
+import {
+  formatCount,
+  formatMoney,
+  hasSales,
+  rangeLabel,
+  toChartData,
+} from "./dashboardUtils";
 import PeriodSelector from "./components/PeriodSelector";
 import LastUpdated from "./components/LastUpdated";
 import KpiGrid from "./components/KpiGrid";
@@ -17,7 +23,9 @@ import BucketDetailPanel from "./components/BucketDetailPanel";
 export default function DashboardPage() {
   const { selectedInstitutionName } = useInstitution();
   const dashboard = useSalesDashboard();
-  const { summary, timeseries, top, bucket, range, granularity } = dashboard;
+  const { summary, timeseries, top, combos, bucket, range, granularity } =
+    dashboard;
+  const comboTotals = combos.data?.totals;
   const [highlighted, setHighlighted] = useState(null);
 
   const chartData = useMemo(
@@ -27,7 +35,8 @@ export default function DashboardPage() {
   const toggleChannel = (key) =>
     setHighlighted((current) => (current === key ? null : key));
 
-  const failed = summary.error || timeseries.error || top.error;
+  const failed =
+    summary.error || timeseries.error || top.error || combos.error;
   const noSales = summary.data && !hasSales(summary.data);
 
   return (
@@ -135,6 +144,23 @@ export default function DashboardPage() {
               </Card>
             )}
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader
+              title="Promociones (combos) más vendidas"
+              subtitle={
+                comboTotals
+                  ? `${rangeLabel(range)} · ${formatCount(comboTotals.units)} combos · ${formatMoney(comboTotals.revenue)}`
+                  : rangeLabel(range)
+              }
+            />
+            <TopProductsList
+              top={combos.data}
+              emptyText="Sin combos vendidos en este periodo."
+            />
+          </Card>
         </div>
       </main>
     </>
