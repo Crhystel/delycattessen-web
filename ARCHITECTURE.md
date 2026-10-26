@@ -43,7 +43,7 @@ src/
 │  ├─ catalog/       Productos, ingredientes y alérgenos
 │  ├─ menu/          Menú mensual, platillos, descuentos y promociones (combos)
 │  ├─ dashboard/     Analítica de ventas
-│  ├─ reports/       Consumo de docentes
+│  ├─ reports/       Consumo a crédito de docentes del mes y su exportación CSV para RR. HH.
 │  └─ institutions/  Servicio de sedes (sin pantalla propia)
 │
 ├─ components/ui/   Piezas visuales genéricas (Button, Modal, Card, Field, Badge…)
@@ -183,5 +183,5 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 
 ## 12. Estado actual y pendientes
 
-- **Mocks temporales** (`src/data/mockData.js`): Dashboard y Consumo de docentes aún no tienen endpoint; cada uso está marcado con `// TODO`. Al conectarlos se crea su `services.js` + hook y se borra el mock.
+- **Mocks temporales** (`src/data/mockData.js`): ninguna pantalla los usa ya (Dashboard y Consumo de docentes están conectados a la API). Si una pantalla nueva necesita uno mientras no exista su endpoint, márcalo con `// TODO` y bórralo al conectarlo.
 - `features/users/staffRules.js` espeja las reglas del backend sobre qué cuentas de personal se pueden editar y aún no está conectado a la pantalla.

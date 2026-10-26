@@ -159,11 +159,3 @@ export const operationsStaff = [
   { id: 'po2', name: 'Sofía Vargas', email: 'svargas@delycattessen.com', branch: 'El Sauce School', status: 'Activo', password: 'Th4jY9nW' },
   { id: 'po3', name: 'Raúl Torres', email: 'rtorres@delycattessen.com', branch: 'Martim Cereré', status: 'Inactivo', password: 'Bp3sV8cL' },
 ]
-
-// Teaching staff credit consumption (RF-06 / RF-07)
-export const teacherConsumption = [
-  { id: 'd1', name: 'Lic. Andrea Maldonado', institution: 'Martim Cereré', consumptions: 14, total: 38.6, period: 'Junio 2026' },
-  { id: 'd2', name: 'Ing. Pablo Cárdenas', institution: 'El Sauce School', consumptions: 9, total: 24.1, period: 'Junio 2026' },
-  { id: 'd3', name: 'Lic. María Fernanda Ortiz', institution: 'Martim Cereré', consumptions: 17, total: 45.9, period: 'Junio 2026' },
-  { id: 'd4', name: 'Lic. Diego Sánchez', institution: 'El Sauce School', consumptions: 6, total: 16.4, period: 'Junio 2026' },
-]
