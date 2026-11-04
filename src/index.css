@@ -53,7 +53,12 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
+}
+
+/* Disable the elastic bounce at the end of the page (shows a gap below the layout) */
+html, body {
+  overscroll-behavior: none;
 }
 
 body {
