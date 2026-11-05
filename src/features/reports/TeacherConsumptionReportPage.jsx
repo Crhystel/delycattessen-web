@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Download, GraduationCap, Wallet, FileSpreadsheet } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Card, { CardHeader } from "../../components/ui/Card";
@@ -6,25 +5,31 @@ import StatCard from "../../components/ui/StatCard";
 import Button from "../../components/ui/Button";
 import { useInstitution } from "../../context/InstitutionContext";
 import { useTeacherCreditReport } from "./hooks/useTeacherCreditReport";
-import { formatAmount } from "./reportUtils";
+import { useTeacherCreditExport } from "./hooks/useTeacherCreditExport";
+import { formatAmount, reportFileName } from "./reportUtils";
 import TeacherCreditTable from "./components/TeacherCreditTable";
 
+const EXPORT_STATUS_LABELS = {
+  PENDING: "En cola…",
+  PROCESSING: "Generando el Excel…",
+};
+
 // HU-08.2: teachers' credit consumptions from day 1 of the month until today,
-// exported to CSV for Human Resources.
+// exported to Excel (built in the background by the server) for Human Resources.
 export default function TeacherConsumptionReportPage() {
   const { selectedInstitutionName } = useInstitution();
-  const { report, loading, error, reload, exportReport } =
-    useTeacherCreditReport();
-  const [exporting, setExporting] = useState(false);
+  const { report, loading, error, reload } = useTeacherCreditReport();
+  const { startExport, status, isExporting } = useTeacherCreditExport();
 
   const period = report?.period ?? "mes en curso";
   const totals = report?.totals;
   const isEmpty = !report || report.teachers.length === 0;
 
-  async function handleExport() {
-    setExporting(true);
-    await exportReport();
-    setExporting(false);
+  function handleExport() {
+    startExport({
+      fileName: reportFileName(selectedInstitutionName, report.dateTo),
+      period,
+    });
   }
 
   return (
@@ -77,9 +82,11 @@ export default function TeacherConsumptionReportPage() {
             <Button
               icon={Download}
               onClick={handleExport}
-              disabled={loading || exporting || isEmpty}
+              disabled={loading || isExporting || isEmpty}
             >
-              {exporting ? "Exportando..." : "Exportar para RR. HH. (CSV)"}
+              {isExporting
+                ? EXPORT_STATUS_LABELS[status]
+                : "Exportar para RR. HH. (Excel)"}
             </Button>
           </div>
           <TeacherCreditTable report={report} loading={loading} />

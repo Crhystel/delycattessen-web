@@ -20,7 +20,7 @@ class ApiClient {
       headers: this.buildHeaders(token, isFormData),
       body: isFormData ? body : body ? JSON.stringify(body) : undefined,
     });
-    const data = await this.parseBody(response);
+    const data = await this.parseBody(response, options);
     if (!response.ok)
       return this.onError(response, data, {
         endpoint,
@@ -40,7 +40,9 @@ class ApiClient {
     return headers;
   }
 
-  async parseBody(response) {
+  // `responseType: "blob"` is for file downloads; error bodies are still JSON.
+  async parseBody(response, { responseType } = {}) {
+    if (responseType === "blob" && response.ok) return response.blob();
     return response.json().catch(() => null);
   }
 

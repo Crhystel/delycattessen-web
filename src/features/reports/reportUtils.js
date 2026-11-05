@@ -73,7 +73,7 @@ export function adaptReport(r) {
   };
 }
 
-// "consumo-docentes-sede-a-2026-10-26.csv"
+// "consumo-docentes-sede-a-2026-10-26.xlsx"
 export function reportFileName(institutionLabel, dateTo) {
   const slug = institutionLabel
     .normalize("NFD")
@@ -81,5 +81,5 @@ export function reportFileName(institutionLabel, dateTo) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-  return `consumo-docentes-${slug || "sede"}-${dateTo}.csv`;
+  return `consumo-docentes-${slug || "sede"}-${dateTo}.xlsx`;
 }

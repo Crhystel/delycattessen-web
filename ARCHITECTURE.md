@@ -43,7 +43,7 @@ src/
 │  ├─ catalog/       Productos, ingredientes y alérgenos
 │  ├─ menu/          Menú mensual, platillos, descuentos y promociones (combos)
 │  ├─ dashboard/     Analítica de ventas
-│  ├─ reports/       Consumo a crédito de docentes del mes y su exportación CSV para RR. HH.
+│  ├─ reports/       Consumo a crédito de docentes del mes y su exportación a Excel para RR. HH. (el servidor la arma en segundo plano con una cola; la web consulta el estado y descarga el archivo)
 │  └─ institutions/  Servicio de sedes (sin pantalla propia)
 │
 ├─ components/ui/   Piezas visuales genéricas (Button, Modal, Card, Field, Badge…)
