@@ -8,22 +8,39 @@ import {
 } from "react";
 import { login as loginRequest, getMe } from "../features/auth/services";
 import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
+import {
+  isStoredSessionIdle,
+  SESSION_END_REASON,
+} from "../lib/idleSession";
 import { tokenStore } from "../lib/tokenStore";
+import { useIdleLogout } from "../hooks/useIdleLogout";
 
 const AuthContext = createContext(null);
 
-// Session rules: the stored session survives closing the app and is erased
-// ONLY by logout() (the user signing out). If the server rejects the session
+// Session rules: the stored session survives closing the tab and is erased by
+// logout() (the user signing out) or by the idle logout (no activity for
+// IDLE_TIMEOUT_MS, also checked on startup). If the server rejects the session
 // (refresh token expired) we just leave the panel in memory and ask for a new
 // login; the stored data is overwritten by that login, never wiped silently.
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => tokenStore.getAccess());
-  const [user, setUser] = useState(() => tokenStore.getProfile());
-  // Only loading when a stored session has to be validated on mount.
-  const [isLoadingUser, setIsLoadingUser] = useState(() =>
-    Boolean(tokenStore.getAccess()),
+  // A stored session that went idle while the app was closed is not restored.
+  const [idleOnStart] = useState(
+    () => Boolean(tokenStore.getAccess()) && isStoredSessionIdle(),
   );
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [token, setToken] = useState(() =>
+    idleOnStart ? null : tokenStore.getAccess(),
+  );
+  const [user, setUser] = useState(() =>
+    idleOnStart ? null : tokenStore.getProfile(),
+  );
+  // Only loading when a stored session has to be validated on mount.
+  const [isLoadingUser, setIsLoadingUser] = useState(
+    () => !idleOnStart && Boolean(tokenStore.getAccess()),
+  );
+  const [sessionExpired, setSessionExpired] = useState(idleOnStart);
+  const [sessionEndReason, setSessionEndReason] = useState(
+    idleOnStart ? SESSION_END_REASON.INACTIVITY : SESSION_END_REASON.EXPIRED,
+  );
 
   const updateUser = useCallback((userData) => {
     setUser(userData);
@@ -38,10 +55,26 @@ export function AuthProvider({ children }) {
 
   const clearSessionExpired = useCallback(() => setSessionExpired(false), []);
 
+  // No activity for too long: wipe the stored session and ask for a new login.
+  const logoutForInactivity = useCallback(() => {
+    tokenStore.clear();
+    setToken(null);
+    setUser(null);
+    setSessionEndReason(SESSION_END_REASON.INACTIVITY);
+    setSessionExpired(true);
+  }, []);
+
+  useIdleLogout({ enabled: Boolean(token), onIdle: logoutForInactivity });
+
+  // The session went idle while the app was closed: drop what was stored.
+  useEffect(() => {
+    if (idleOnStart) tokenStore.clear();
+  }, [idleOnStart]);
+
   // Returning visitor: refresh the profile from the server. A network error
   // keeps the cached profile; a rejected session arrives as SESSION_EXPIRED.
   useEffect(() => {
-    if (!tokenStore.getAccess()) return undefined;
+    if (idleOnStart || !tokenStore.getAccess()) return undefined;
     let cancelled = false;
     getMe()
       .then((data) => {
@@ -54,11 +87,12 @@ export function AuthProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [updateUser]);
+  }, [updateUser, idleOnStart]);
 
   useEffect(
     () =>
       authEvents.on(SESSION_EXPIRED, () => {
+        setSessionEndReason(SESSION_END_REASON.EXPIRED);
         setSessionExpired(true);
         setToken(null);
         setUser(null);
@@ -89,6 +123,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: !!token,
       isLoadingUser,
       sessionExpired,
+      sessionEndReason,
       clearSessionExpired,
     }),
     [
@@ -99,6 +134,7 @@ export function AuthProvider({ children }) {
       logout,
       isLoadingUser,
       sessionExpired,
+      sessionEndReason,
       clearSessionExpired,
     ],
   );

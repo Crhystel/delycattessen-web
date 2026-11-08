@@ -73,8 +73,8 @@ export default function DashboardPage() {
 
         <KpiGrid kpis={summary.data?.kpis ?? null} />
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <Card className="xl:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
             <CardHeader
               title="Ventas en el tiempo"
               subtitle={`${rangeLabel(range)} · haz clic en una barra para ver su detalle`}
@@ -114,7 +114,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader
               title="Productos más vendidos"
@@ -123,7 +123,7 @@ export default function DashboardPage() {
             <TopProductsList top={top.data} />
           </Card>
 
-          <div className="xl:col-span-2">
+          <div className="lg:col-span-2">
             {bucket ? (
               <BucketDetailPanel
                 bucket={bucket}
@@ -146,7 +146,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader
               title="Promociones (combos) más vendidas"
