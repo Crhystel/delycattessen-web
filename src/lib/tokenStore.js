@@ -4,6 +4,8 @@
 const ACCESS_KEY = "access_token";
 const REFRESH_KEY = "refresh_token";
 const PROFILE_KEY = "user_profile";
+// Epoch ms of the last user interaction; shared between tabs for idle logout.
+const ACTIVITY_KEY = "last_activity";
 
 function read(key) {
   try {
@@ -39,9 +41,15 @@ export const tokenStore = {
   },
   setProfile: (profile) =>
     write(PROFILE_KEY, profile ? JSON.stringify(profile) : null),
+  getLastActivity() {
+    const saved = Number(read(ACTIVITY_KEY));
+    return Number.isFinite(saved) && saved > 0 ? saved : null;
+  },
+  touchActivity: (now = Date.now()) => write(ACTIVITY_KEY, String(now)),
   clear() {
     write(ACCESS_KEY, null);
     write(REFRESH_KEY, null);
     write(PROFILE_KEY, null);
+    write(ACTIVITY_KEY, null);
   },
 };

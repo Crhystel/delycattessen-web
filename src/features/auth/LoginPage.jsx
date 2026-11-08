@@ -4,13 +4,20 @@ import { ChefHat } from "lucide-react";
 import Button from "../../components/ui/Button";
 import { Field, Input } from "../../components/ui/Field";
 import { useAuth } from "../../context/AuthContext";
+import { SESSION_END_REASON } from "../../lib/idleSession";
 import ForgotPasswordModal from "./components/ForgotPasswordModal";
 import PasswordInput from "../../components/ui/PasswordInput";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, sessionExpired, clearSessionExpired, isAuthenticated, role } =
-    useAuth();
+  const {
+    login,
+    sessionExpired,
+    sessionEndReason,
+    clearSessionExpired,
+    isAuthenticated,
+    role,
+  } = useAuth();
   const [email, setEmail] = useState("");
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -87,7 +94,10 @@ export default function LoginPage() {
 
           {sessionExpired && !error && (
             <div className="mb-4 rounded-lg bg-warning-50 px-3 py-2 text-sm text-warning-600">
-              Tu sesión expiró. Inicia sesión nuevamente para continuar.
+              {sessionEndReason === SESSION_END_REASON.INACTIVITY
+                ? "Tu sesión se cerró por inactividad."
+                : "Tu sesión expiró."}{" "}
+              Inicia sesión nuevamente para continuar.
             </div>
           )}
 
