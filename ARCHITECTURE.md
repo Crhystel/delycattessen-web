@@ -27,6 +27,7 @@ Variable de entorno (archivo `.env`, **no se sube al repo**):
 
 ```
 VITE_API_URL=<URL base de la API, p. ej. http://127.0.0.1:8000/api>
+VITE_IDLE_TIMEOUT_MINUTES=<opcional: minutos sin actividad antes de cerrar la sesión; por defecto 60, 0 la desactiva>
 ```
 
 ## 3. Idea central: organización por feature
@@ -138,7 +139,7 @@ Las rutas `/admin/*` están protegidas por `ProtectedRoute` con la regla `IsAdmi
 
 | Contexto | Contiene |
 | --- | --- |
-| `AuthContext` | Sesión: usuario, rol, login, logout, aviso de sesión expirada |
+| `AuthContext` | Sesión: usuario, rol, login, logout, cierre por inactividad, aviso de sesión terminada y su motivo (`sessionEndReason`: expirada o inactividad) |
 | `InstitutionContext` | Lista de sedes y la sede seleccionada (`ALL_INSTITUTIONS` = vista consolidada) |
 | `ToastContext` | Avisos de éxito / error / advertencia |
 
@@ -147,11 +148,12 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 ## 8. Sesión y autenticación
 
 - Login con correo y contraseña; el backend devuelve un token de acceso (1 h) y uno de renovación (15 días).
-- La sesión se guarda en el navegador (`lib/tokenStore.js`), por lo que **el usuario sigue logueado aunque cierre la pestaña o la app**.
+- La sesión se guarda en el navegador (`lib/tokenStore.js`), por lo que **el usuario sigue logueado aunque cierre la pestaña o la app, mientras no supere el límite de inactividad**.
+- **Cierre por inactividad (solo web):** si pasan `VITE_IDLE_TIMEOUT_MINUTES` minutos (60 por defecto) sin mouse, teclado, scroll ni toque, `hooks/useIdleLogout.js` cierra la sesión: borra token y perfil guardados y lleva al login con el aviso "Tu sesión se cerró por inactividad". La hora de la última actividad se guarda en `tokenStore`, así que una pestaña activa mantiene vivas a las demás, y al reabrir el navegador pasado el límite la sesión guardada se descarta. La app Flutter **no** tiene esta regla: allí la sesión dura hasta que el usuario cierra sesión o el refresh es rechazado.
 - Los componentes nunca manejan el token: `apiClient` lo agrega a cada petición.
 - Si el token de acceso vence (401), `apiClient` lo renueva solo y **reenvía la petición una vez**. El 401 ocurre antes de que el backend ejecute la acción, así que reenviar no duplica pagos ni cambios. Si hay varias peticiones simultáneas, comparten una sola renovación. Los errores de red o 5xx **no** se reenvían.
 - Si la renovación es rechazada, la app saca al usuario del panel y le pide iniciar sesión, **sin borrar** los datos guardados.
-- Token y perfil guardados se borran **solo** cuando el usuario pulsa "Cerrar sesión".
+- Token y perfil guardados se borran cuando el usuario pulsa "Cerrar sesión" o cuando se cumple el cierre por inactividad.
 
 ## 9. Patrones de diseño usados
 
