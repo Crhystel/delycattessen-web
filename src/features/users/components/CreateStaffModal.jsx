@@ -2,11 +2,11 @@ import { useState } from "react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
 import { EMPTY_STAFF_FORM } from "../staffForm";
-import CredentialsPanel from "./CredentialsPanel";
+import CredentialsSentPanel from "./CredentialsSentPanel";
 import StaffFields from "./StaffFields";
 
 // Rendered only while open, so the form starts empty every time.
-// After a successful creation it shows the temporary credentials.
+// After a successful creation it confirms the credentials were emailed.
 export default function CreateStaffModal({ role, onCreate, onClose }) {
   const [form, setForm] = useState(EMPTY_STAFF_FORM);
   const [error, setError] = useState("");
@@ -55,9 +55,9 @@ export default function CreateStaffModal({ role, onCreate, onClose }) {
       }
     >
       {credentials ? (
-        <CredentialsPanel
+        <CredentialsSentPanel
           email={credentials.email}
-          password={credentials.password}
+          emailSent={credentials.emailSent}
         />
       ) : (
         <form onSubmit={handleSubmit}>
