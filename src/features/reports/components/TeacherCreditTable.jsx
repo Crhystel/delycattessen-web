@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import Badge from "../../../components/ui/Badge";
 import { formatAmount } from "../reportUtils";
 
 function SalesDetail({ sales }) {
@@ -31,6 +32,24 @@ function SalesDetail({ sales }) {
   );
 }
 
+// Whether the teacher already got the statement of this (closed) month.
+function StatementBadge({ teacher }) {
+  if (teacher.statementStatus === "SENT") {
+    const day = new Date(teacher.statementSentAt).toLocaleDateString("es-EC", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+    return <Badge tone="success">Enviado {day}</Badge>;
+  }
+  if (teacher.statementStatus === "QUEUED") {
+    return <Badge tone="warning">En cola</Badge>;
+  }
+  if (teacher.statementStatus === "FAILED") {
+    return <Badge tone="danger">Fallido</Badge>;
+  }
+  return <span className="text-ink-300">—</span>;
+}
+
 function TeacherRow({ teacher, expanded, onToggle }) {
   const Chevron = expanded ? ChevronDown : ChevronRight;
   return (
@@ -48,8 +67,11 @@ function TeacherRow({ teacher, expanded, onToggle }) {
         <td className="px-5 py-3 text-ink-500">{teacher.email || "—"}</td>
         <td className="px-5 py-3 text-ink-500">{teacher.institutionName}</td>
         <td className="px-5 py-3 text-ink-700">{teacher.consumptions}</td>
-        <td className="px-5 py-3 text-right font-semibold text-ink-900" colSpan={2}>
+        <td className="px-5 py-3 text-right font-semibold text-ink-900">
           {formatAmount(teacher.total)}
+        </td>
+        <td className="px-5 py-3">
+          <StatementBadge teacher={teacher} />
         </td>
       </tr>
       {expanded && <SalesDetail sales={teacher.sales} />}
@@ -71,9 +93,8 @@ export default function TeacherCreditTable({ report, loading }) {
             <th className="px-5 py-3 font-medium">Correo</th>
             <th className="px-5 py-3 font-medium">Sede</th>
             <th className="px-5 py-3 font-medium">N.º de consumos</th>
-            <th className="px-5 py-3 font-medium text-right" colSpan={2}>
-              Total
-            </th>
+            <th className="px-5 py-3 font-medium text-right">Total</th>
+            <th className="px-5 py-3 font-medium">Estado de cuenta</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +103,7 @@ export default function TeacherCreditTable({ report, loading }) {
               <td colSpan={6} className="px-5 py-8 text-center text-ink-300">
                 {loading
                   ? "Cargando reporte..."
-                  : "No hay consumos a crédito este mes."}
+                  : "No hay consumos a crédito en este mes."}
               </td>
             </tr>
           )}
