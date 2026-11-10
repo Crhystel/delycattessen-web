@@ -27,14 +27,20 @@ export function useStaff() {
     async (form, role) => {
       try {
         const data = await createStaff({ ...form, role }, selectedInstitution);
-        toast.success(
-          "Cuenta creada",
-          `${fullName(form)} fue registrado correctamente.`,
-        );
+        const emailSent = Boolean(data.email_sent);
+        if (emailSent) {
+          toast.success(
+            "Cuenta creada",
+            `${fullName(form)} recibirá sus credenciales por correo.`,
+          );
+        } else {
+          toast.warning(
+            "Cuenta creada sin correo",
+            `No se pudo enviar las credenciales a ${data.email}.`,
+          );
+        }
         reload();
-        return {
-          credentials: { email: data.email, password: data.temporary_password },
-        };
+        return { credentials: { email: data.email, emailSent } };
       } catch (err) {
         const message = err.message || "No se pudo crear la cuenta.";
         toast.error("No se pudo crear la cuenta", message);
