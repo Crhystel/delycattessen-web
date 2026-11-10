@@ -56,6 +56,8 @@ export function adaptReport(r) {
       institutionName: t.institution_name,
       consumptions: t.consumptions,
       total: Number(t.total),
+      statementStatus: t.statement_status,
+      statementSentAt: t.statement_sent_at,
       sales: t.sales.map((sale) => ({
         id: sale.id,
         ...saleDateTime(sale.created_at),
@@ -73,13 +75,19 @@ export function adaptReport(r) {
   };
 }
 
-// "consumo-docentes-sede-a-2026-10-26.xlsx"
-export function reportFileName(institutionLabel, dateTo) {
+// Current month as "YYYY-MM" (value and max of <input type="month">).
+export function currentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// "consumo-docentes-sede-a-2026-10-01_2026-10-26.pdf" (same name the server uses).
+export function reportFileName(institutionLabel, dateFrom, dateTo, fileType) {
   const slug = institutionLabel
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-  return `consumo-docentes-${slug || "sede"}-${dateTo}.xlsx`;
+  return `consumo-docentes-${slug || "sede"}-${dateFrom}_${dateTo}.${fileType}`;
 }

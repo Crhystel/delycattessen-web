@@ -44,7 +44,7 @@ src/
 │  ├─ catalog/       Productos, ingredientes y alérgenos
 │  ├─ menu/          Menú mensual, platillos, descuentos y promociones (combos)
 │  ├─ dashboard/     Analítica de ventas
-│  ├─ reports/       Consumo a crédito de docentes del mes y su exportación a Excel para RR. HH. (el servidor la arma en segundo plano con una cola; la web consulta el estado y descarga el archivo)
+│  ├─ reports/       Consumo a crédito de docentes de un mes (el en curso, del día 1 a hoy, o uno pasado completo) y su exportación a Excel o PDF para RR. HH. (el servidor la arma en segundo plano con una cola; la web consulta el estado y descarga el archivo) y el envío del estado de cuenta por correo a cada docente (solo meses cerrados; el servidor encola un correo por docente y el reporte muestra el estado de cada uno)
 │  └─ institutions/  Servicio de sedes (sin pantalla propia)
 │
 ├─ components/ui/   Piezas visuales genéricas (Button, Modal, Card, Field, Badge…)

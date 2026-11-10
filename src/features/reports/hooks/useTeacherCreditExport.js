@@ -13,15 +13,17 @@ const FINAL_STATUSES = ["DONE", "FAILED"];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Excel export of the teachers' credit report. The server builds the file in a
-// background queue: this asks for it, follows its status one request at a time
-// until it is ready and then saves it. A server-side failure or timeout ends in
-// FAILED, so the button always recovers. `status` is null when idle, otherwise
-// PENDING (queued) or PROCESSING (being built).
+// Excel or PDF export of the teachers' credit report. The server builds the
+// file in a background queue: this asks for it, follows its status one request
+// at a time until it is ready and then saves it. A server-side failure or
+// timeout ends in FAILED, so the buttons always recover. `status` is null when
+// idle, otherwise PENDING (queued) or PROCESSING (being built); `activeType`
+// is the file type being built ("xlsx" | "pdf"), also null when idle.
 export function useTeacherCreditExport() {
   const toast = useToast();
   const { selectedInstitution } = useInstitution();
   const [status, setStatus] = useState(null);
+  const [activeType, setActiveType] = useState(null);
   const mounted = useRef(true);
 
   // Stops following the export when leaving the page.
@@ -33,10 +35,14 @@ export function useTeacherCreditExport() {
   }, []);
 
   const startExport = useCallback(
-    async ({ fileName, period }) => {
+    async ({ fileName, period, month, fileType }) => {
+      setActiveType(fileType);
       setStatus("PENDING");
       try {
-        let job = await requestTeacherCreditExport(selectedInstitution);
+        let job = await requestTeacherCreditExport(selectedInstitution, {
+          month,
+          fileType,
+        });
         while (mounted.current && !FINAL_STATUSES.includes(job.status)) {
           setStatus(job.status);
           await sleep(POLL_MS);
@@ -57,11 +63,14 @@ export function useTeacherCreditExport() {
         toast.error("No se pudo exportar el reporte", err.message);
         return false;
       } finally {
-        if (mounted.current) setStatus(null);
+        if (mounted.current) {
+          setStatus(null);
+          setActiveType(null);
+        }
       }
     },
     [selectedInstitution, toast],
   );
 
-  return { startExport, status, isExporting: status !== null };
+  return { startExport, status, activeType, isExporting: status !== null };
 }
