@@ -32,6 +32,23 @@ npm run dev
 Abre la URL que indica la terminal (por defecto `http://localhost:5173`). En el login,
 elige el perfil **Administrador** o **Personal Operativo** para entrar a cada módulo.
 
+## Pipeline CI/CD
+
+El pipeline vive en `.github/workflows/ci-cd.yml` y se ve por etapas en la pestaña Actions:
+
+```
+1 · Lint ───────────┐
+                    ├─► 3 · Build ─► 4 · Deploy a GitHub Pages (solo rama main)
+2 · Auditoría ──────┘
+```
+
+- Corre en cada push o pull request hacia `main` y `develop` (no si solo cambian `.md`).
+- **1 · Lint:** `npm run lint`. **2 · Auditoría:** `npm audit` de producción; informa en el resumen sin bloquear.
+- **3 · Build:** `npm run build` y guarda `dist/` como artefacto (3 días).
+- **4 · Deploy:** publica `dist/` en GitHub Pages al hacer merge a `main`. Hay que activar Pages una vez en *Settings > Pages > Source: GitHub Actions*; para exigir aprobación manual, *Settings > Environments > github-pages > Required reviewers*.
+- La URL del backend se toma de la variable del repositorio `STAGING_API_URL` (*Settings > Secrets and variables > Actions > Variables*) y debe ser **HTTPS**. El backend debe incluir `https://<usuario>.github.io` en `CORS_ALLOWED_ORIGINS`.
+- En local nada cambia: `VITE_BASE` solo lo define el CI (en local la app se sirve desde `/`).
+
 ## Stack
 
 - React 19 + Vite
