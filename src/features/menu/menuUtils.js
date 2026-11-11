@@ -1,4 +1,4 @@
-import { pad2 } from "../../lib/promoRules";
+import { pad2 } from "../../lib/dates";
 
 const MONTH_NAMES = [
   "Enero",
@@ -127,27 +127,12 @@ export function adaptDish(d) {
   };
 }
 
-// Labels of the status the backend derives from the promotion dates.
-export const PROMO_STATUS = {
+// Labels of the status the backend derives from the combo dates.
+export const COMBO_STATUS = {
   ACTIVE: { label: "Activa", tone: "success" },
   SCHEDULED: { label: "Programada", tone: "warning" },
   EXPIRED: { label: "Vencida", tone: "neutral" },
 };
-
-// API promotion -> shape used by the UI.
-export function adaptPromotion(p) {
-  return {
-    id: p.id,
-    products: p.products.map((product) => product.id),
-    productNames: p.products.map((product) => product.name),
-    discount: p.discount_percentage,
-    startDate: p.start_date,
-    endDate: p.end_date,
-    image: p.image || null,
-    status: p.status,
-    institutionName: p.institution_name || null,
-  };
-}
 
 // API combo -> shape used by the UI. The stock fields are tolerant of an older
 // backend that does not send them (`availableQuantity` null = unknown).

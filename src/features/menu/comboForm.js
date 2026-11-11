@@ -1,4 +1,4 @@
-import { todayISO, addDaysISO } from "../../lib/promoRules";
+import { todayISO, addDaysISO } from "../../lib/dates";
 
 // Built on each call: the default dates depend on the current day.
 export function emptyComboForm() {

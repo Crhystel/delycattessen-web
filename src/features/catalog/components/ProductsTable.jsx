@@ -1,29 +1,13 @@
-import Badge from "../../../components/ui/Badge";
 import DataTable from "../../../components/ui/DataTable";
 import VisibilityBadge from "../../../components/ui/VisibilityBadge";
 import RowIconActions from "../../../components/ui/RowIconActions";
 import { isImageSource } from "../../../lib/images";
 
-// `discount_percentage`/`final_price` come from the backend and only reflect a
-// promotion in force today, so an expired one shows the original price again.
 function PriceCell({ product }) {
-  if (!product.discount_percentage) {
-    return (
-      <span className="text-ink-700 font-medium">
-        ${Number(product.price).toFixed(2)}
-      </span>
-    );
-  }
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-ink-300 line-through text-xs">
-        ${Number(product.price).toFixed(2)}
-      </span>
-      <span className="text-teal-700 font-semibold">
-        ${Number(product.final_price).toFixed(2)}
-      </span>
-      <Badge tone="success">-{product.discount_percentage}%</Badge>
-    </div>
+    <span className="text-ink-700 font-medium">
+      ${Number(product.price).toFixed(2)}
+    </span>
   );
 }
 

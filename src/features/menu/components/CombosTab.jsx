@@ -4,7 +4,7 @@ import Badge from "../../../components/ui/Badge";
 import DataTable from "../../../components/ui/DataTable";
 import RowIconActions from "../../../components/ui/RowIconActions";
 import VisibilityBadge from "../../../components/ui/VisibilityBadge";
-import { PROMO_STATUS, comboMissingItems } from "../menuUtils";
+import { COMBO_STATUS, comboMissingItems } from "../menuUtils";
 
 function ComboInfo({ combo }) {
   return (
@@ -55,7 +55,7 @@ function ComboStock({ combo }) {
 }
 
 function ComboStatus({ combo }) {
-  const status = PROMO_STATUS[combo.status] ?? PROMO_STATUS.EXPIRED;
+  const status = COMBO_STATUS[combo.status] ?? COMBO_STATUS.EXPIRED;
   return <Badge tone={status.tone}>{status.label}</Badge>;
 }
 

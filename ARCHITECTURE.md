@@ -1,6 +1,6 @@
 # Arquitectura del frontend web — D'Elycattessen
 
-Panel administrativo web de D'Elycattessen. Consume la API REST del backend Django (`delycattessen-backend`) y permite al administrador gestionar usuarios, catálogo, menú mensual, descuentos y promociones (combos) y ver reportes.
+Panel administrativo web de D'Elycattessen. Consume la API REST del backend Django (`delycattessen-backend`) y permite al administrador gestionar usuarios, catálogo, menú mensual, promociones (combos) y ver reportes.
 
 ## 1. Stack
 
@@ -42,7 +42,7 @@ src/
 │  ├─ auth/          Login, recuperar contraseña, ruta protegida
 │  ├─ users/         Gestión de docentes y personal operativo
 │  ├─ catalog/       Productos, ingredientes y alérgenos
-│  ├─ menu/          Menú mensual, platillos, descuentos y promociones (combos)
+│  ├─ menu/          Menú mensual, platillos, promociones (combos)
 │  ├─ dashboard/     Analítica de ventas
 │  ├─ reports/       Consumo a crédito de docentes de un mes (el en curso, del día 1 a hoy, o uno pasado completo) y su exportación a Excel o PDF para RR. HH. (el servidor la arma en segundo plano con una cola; la web consulta el estado y descarga el archivo) y el envío del estado de cuenta por correo a cada docente (solo meses cerrados; el servidor encola un correo por docente y el reporte muestra el estado de cada uno)
 │  └─ institutions/  Servicio de sedes (sin pantalla propia)
@@ -130,7 +130,7 @@ Reglas:
 | `/admin/dashboard` | Analítica de ventas | Admin |
 | `/admin/users` | Gestión de usuarios | Admin |
 | `/admin/products` | Catálogo e inventario | Admin |
-| `/admin/menu` | Menú mensual, platillos, descuentos y promociones (combos) | Admin |
+| `/admin/menu` | Menú mensual, platillos, promociones (combos) | Admin |
 | `/admin/teachers` | Consumo de docentes | Admin |
 
 Las rutas `/admin/*` están protegidas por `ProtectedRoute` con la regla `IsAdmin` (`lib/permissions.js`).
@@ -143,7 +143,7 @@ Las rutas `/admin/*` están protegidas por `ProtectedRoute` con la regla `IsAdmi
 | `InstitutionContext` | Lista de sedes y la sede seleccionada (`ALL_INSTITUTIONS` = vista consolidada) |
 | `ToastContext` | Avisos de éxito / error / advertencia |
 
-Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Router. Los descuentos y los combos no son estado global: los cargan los hooks `features/menu/hooks/usePromotions.js` (descuentos; en la API se llaman `Promotion`) y `useCombos.js`, y el catálogo muestra el descuento vigente que ya viene en cada producto (`discount_percentage`, `final_price`).
+Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Router. Los combos (promociones) no son estado global: los carga el hook `features/menu/hooks/useCombos.js`. No hay descuentos por porcentaje: el catálogo muestra solo el precio normal del producto.
 
 ## 8. Sesión y autenticación
 
@@ -165,7 +165,7 @@ Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useIns
 
 ## 10. Convenciones
 
-- Código y comentarios técnicos en **inglés**; textos visibles al usuario en **español**.
+- Código y comentarios siempre en **inglés**; textos visibles al usuario en **español**. Los comentarios son breves (una o dos líneas) y solo explican un porqué no obvio; se evitan los innecesarios y los largos.
 - Componentes y páginas en `PascalCase.jsx` (las páginas terminan en `Page`); hooks `useCamelCase.js`; el resto `camelCase.js`.
 - Carga de datos con `useAsyncData` (el `fetcher` debe tener identidad estable).
 - Modales y formularios se renderizan solo mientras están abiertos, para arrancar limpios.

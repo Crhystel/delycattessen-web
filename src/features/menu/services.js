@@ -14,16 +14,6 @@ function buildDishFormData(data) {
   return formData;
 }
 
-function buildPromotionFormData(data) {
-  const formData = new FormData();
-  data.products.forEach((id) => formData.append("products", id));
-  formData.append("discount_percentage", data.discount);
-  formData.append("start_date", data.startDate);
-  formData.append("end_date", data.endDate);
-  if (data.imageFile) formData.append("image", data.imageFile);
-  return formData;
-}
-
 function buildComboFormData(data) {
   const formData = new FormData();
   formData.append("name", data.name);
@@ -50,10 +40,6 @@ const dishUrl = (id, institution) =>
   `/catalog/dishes/${id}/${institutionQuery(institution)}`;
 const menusUrl = (institution) =>
   `/catalog/monthly_menus/${institutionQuery(institution)}`;
-const promotionsUrl = (institution) =>
-  `/catalog/promotions/${institutionQuery(institution)}`;
-const promotionUrl = (id, institution) =>
-  `/catalog/promotions/${id}/${institutionQuery(institution)}`;
 const combosUrl = (institution) =>
   `/catalog/combos/${institutionQuery(institution)}`;
 const comboUrl = (id, institution) =>
@@ -113,30 +99,6 @@ export function unpublishMonthlyMenu(menuId, institution) {
   return apiClient(menuActionUrl(menuId, "unpublish", institution), {
     method: "POST",
   });
-}
-
-export function getPromotions(institution) {
-  return apiClient(promotionsUrl(institution));
-}
-
-export function createPromotion(data, institution) {
-  return apiClient(promotionsUrl(institution), {
-    method: "POST",
-    body: buildPromotionFormData(data),
-    isFormData: true,
-  });
-}
-
-export function updatePromotion(id, data, institution) {
-  return apiClient(promotionUrl(id, institution), {
-    method: "PATCH",
-    body: buildPromotionFormData(data),
-    isFormData: true,
-  });
-}
-
-export function deletePromotion(id, institution) {
-  return apiClient(promotionUrl(id, institution), { method: "DELETE" });
 }
 
 export function getCombos(institution) {
