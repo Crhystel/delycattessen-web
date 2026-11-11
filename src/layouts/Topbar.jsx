@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Building2, ChevronDown, Check } from "lucide-react";
+import { useOutletContext } from "react-router-dom";
+import { Building2, ChevronDown, Check, Menu } from "lucide-react";
 import { useInstitution } from "../context/InstitutionContext";
 import { useAuth } from "../context/AuthContext";
 import { ALL_INSTITUTIONS } from "../lib/institutions";
 
 export default function Topbar({ title, subtitle }) {
   const { user } = useAuth();
+  // AdminLayout provides openMenu (the mobile drawer); absent outside the panel.
+  const { openMenu } = useOutletContext() ?? {};
   const {
     institutions,
     ownInstitution,
@@ -70,27 +73,42 @@ export default function Topbar({ title, subtitle }) {
   }
 
   return (
-    <header className="h-16 bg-white border-b border-ink-100 px-6 flex items-center justify-between sticky top-0 z-10">
-      <div>
-        <h1 className="font-display font-bold text-lg text-ink-900 leading-none">
-          {title}
-        </h1>
-        {subtitle && <p className="text-xs text-ink-500 mt-1">{subtitle}</p>}
+    <header className="min-h-16 bg-white border-b border-ink-100 px-4 sm:px-6 py-2 flex items-center justify-between gap-3 sticky top-0 z-10">
+      <div className="flex items-center gap-3 min-w-0">
+        {openMenu && (
+          <button
+            type="button"
+            onClick={openMenu}
+            aria-label="Abrir menú"
+            className="lg:hidden w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-ink-700 hover:bg-ink-100"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+        <div className="min-w-0">
+          <h1 className="font-display font-bold text-lg text-ink-900 leading-none truncate">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="hidden sm:block text-xs text-ink-500 mt-1 truncate">{subtitle}</p>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <div className="relative" ref={ref}>
           <button
             onClick={() => setOpen((v) => !v)}
+            aria-label={`Sede: ${selectedInstitutionName}`}
             className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 bg-ink-50 hover:bg-ink-100 transition-colors"
           >
             <Building2 size={15} className="text-ink-300" />
-            {selectedInstitutionName}
+            <span className="hidden sm:inline">{selectedInstitutionName}</span>
             <ChevronDown size={14} className="text-ink-300" />
           </button>
 
           {open && (
-            <div className="absolute right-0 mt-2 w-64 bg-white border border-ink-100 rounded-xl shadow-lg py-1.5 z-20">
+            <div className="absolute right-0 mt-2 w-[min(16rem,calc(100vw-2rem))] bg-white border border-ink-100 rounded-xl shadow-lg py-1.5 z-20">
               {ownInstitution && (
                 <button
                   onClick={() => selectInstitution(null)}
@@ -133,7 +151,7 @@ export default function Topbar({ title, subtitle }) {
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 pl-3 border-l border-ink-100">
+        <div className="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-ink-100">
           <div className="w-9 h-9 rounded-full bg-brand-50 text-brand-600 font-semibold flex items-center justify-center text-sm uppercase select-none">
             {initials}
           </div>
