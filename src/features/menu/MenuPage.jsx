@@ -11,36 +11,32 @@ import { useIngredientCatalog } from "../catalog/hooks/useIngredientCatalog";
 import { useProducts } from "../catalog/hooks/useProducts";
 import { useDishes } from "./hooks/useDishes";
 import { useMonthlyMenus } from "./hooks/useMonthlyMenus";
-import { usePromotions } from "./hooks/usePromotions";
 import { useCombos } from "./hooks/useCombos";
 import { sortMenusNewestFirst } from "./menuUtils";
 import MonthCard from "./components/MonthCard";
 import DishesTab from "./components/DishesTab";
-import OffersTab from "./components/OffersTab";
+import CombosTab from "./components/CombosTab";
 import NewMonthModal from "./components/NewMonthModal";
 import DishFormModal from "./components/DishFormModal";
-import PromotionFormModal from "./components/PromotionFormModal";
 import ComboFormModal from "./components/ComboFormModal";
 
 const TABS = [
   { id: "monthly", label: "Menú Mensual" },
   { id: "dishes", label: "Platillos" },
-  { id: "offers", label: "Descuentos y Promociones" },
+  { id: "combos", label: "Promociones" },
 ];
 
-// "New ..." button of each (sub)tab.
+// "New ..." button of each tab.
 const NEW_ACTIONS = {
   monthly: { label: "Nuevo menú mensual", icon: Plus },
   dishes: { label: "Nuevo platillo", icon: UtensilsCrossed },
-  discounts: { label: "Nuevo descuento", icon: Plus },
   combos: { label: "Nueva promoción", icon: Plus },
 };
 
 export default function MenuPage() {
   const { selectedInstitution } = useInstitution();
-  const discounts = usePromotions();
   const combos = useCombos();
-  // Only catalog products can be promoted (never monthly menu dishes).
+  // Only catalog products can be part of a combo (never monthly menu dishes).
   const { products } = useProducts();
   const catalog = useIngredientCatalog();
   const { dishes, saveDish, removeDish } = useDishes();
@@ -55,20 +51,16 @@ export default function MenuPage() {
   } = useMonthlyMenus();
 
   const [tab, setTab] = useState("monthly");
-  const [offerTab, setOfferTab] = useState("discounts");
   // Each modal is rendered only while its state is set.
   const [newMonthModal, setNewMonthModal] = useState(false);
   const [dishModal, setDishModal] = useState(null); // { dish }
-  const [promoModal, setPromoModal] = useState(null); // { promo }
   const [comboModal, setComboModal] = useState(null); // { combo }
 
   const showInstitution = selectedInstitution === ALL_INSTITUTIONS;
-  const actionId = tab === "offers" ? offerTab : tab;
-  const action = NEW_ACTIONS[actionId];
+  const action = NEW_ACTIONS[tab];
   const openNew = {
     monthly: () => setNewMonthModal(true),
     dishes: () => setDishModal({ dish: null }),
-    discounts: () => setPromoModal({ promo: null }),
     combos: () => setComboModal({ combo: null }),
   };
 
@@ -87,7 +79,7 @@ export default function MenuPage() {
         <PageToolbar
           start={<SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />}
           actions={
-            <Button icon={action.icon} onClick={openNew[actionId]}>
+            <Button icon={action.icon} onClick={openNew[tab]}>
               {action.label}
             </Button>
           }
@@ -119,15 +111,13 @@ export default function MenuPage() {
             onDelete={handleDeleteDish}
           />
         )}
-        {tab === "offers" && (
-          <OffersTab
-            view={offerTab}
-            onViewChange={setOfferTab}
-            discounts={discounts}
-            combos={combos}
+        {tab === "combos" && (
+          <CombosTab
+            combos={combos.combos}
+            loading={combos.loading}
             showInstitution={showInstitution}
-            onEditDiscount={(promo) => setPromoModal({ promo })}
-            onEditCombo={(combo) => setComboModal({ combo })}
+            onEdit={(combo) => setComboModal({ combo })}
+            onDelete={combos.removeCombo}
           />
         )}
       </PageContainer>
@@ -144,15 +134,6 @@ export default function MenuPage() {
           catalog={catalog}
           onSave={saveDish}
           onClose={() => setDishModal(null)}
-        />
-      )}
-      {promoModal && (
-        <PromotionFormModal
-          promo={promoModal.promo}
-          promotions={discounts.promotions}
-          products={products}
-          onSave={discounts.savePromotion}
-          onClose={() => setPromoModal(null)}
         />
       )}
       {comboModal && (

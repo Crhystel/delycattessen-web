@@ -1,29 +1,13 @@
-import { EyeOff } from "lucide-react";
-import Badge from "../../../components/ui/Badge";
 import DataTable from "../../../components/ui/DataTable";
+import VisibilityBadge from "../../../components/ui/VisibilityBadge";
 import RowIconActions from "../../../components/ui/RowIconActions";
 import { isImageSource } from "../../../lib/images";
 
-// `discount_percentage`/`final_price` come from the backend and only reflect a
-// promotion in force today, so an expired one shows the original price again.
 function PriceCell({ product }) {
-  if (!product.discount_percentage) {
-    return (
-      <span className="text-ink-700 font-medium">
-        ${Number(product.price).toFixed(2)}
-      </span>
-    );
-  }
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-ink-300 line-through text-xs">
-        ${Number(product.price).toFixed(2)}
-      </span>
-      <span className="text-teal-700 font-semibold">
-        ${Number(product.final_price).toFixed(2)}
-      </span>
-      <Badge tone="success">-{product.discount_percentage}%</Badge>
-    </div>
+    <span className="text-ink-700 font-medium">
+      ${Number(product.price).toFixed(2)}
+    </span>
   );
 }
 
@@ -56,16 +40,6 @@ function ProductInfo({ product, onPreview }) {
         )}
       </div>
     </div>
-  );
-}
-
-function VisibilityBadge({ product }) {
-  if (product.stock > 0) return <Badge tone="success">Visible</Badge>;
-  return (
-    <Badge tone="danger">
-      <EyeOff size={11} />
-      Oculto · sin stock
-    </Badge>
   );
 }
 
@@ -125,7 +99,7 @@ export default function ProductsTable({
     {
       key: "visibility",
       header: "Visibilidad",
-      cell: (product) => <VisibilityBadge product={product} />,
+      cell: (product) => <VisibilityBadge visible={product.stock > 0} />,
     },
     {
       key: "actions",
@@ -162,7 +136,7 @@ export default function ProductsTable({
             )}
           </div>
           <div className="flex items-center justify-between gap-3">
-            <VisibilityBadge product={product} />
+            <VisibilityBadge visible={product.stock > 0} />
             <ProductActions
               product={product}
               onEdit={onEdit}

@@ -1,4 +1,4 @@
-import { todayISO, addDaysISO } from "../../lib/promoRules";
+import { todayISO, addDaysISO } from "../../lib/dates";
 
 // Built on each call: the default dates depend on the current day.
 export function emptyComboForm() {
@@ -39,12 +39,52 @@ export function regularPrice(items, products) {
   }, 0);
 }
 
+// A catalog product the combo can draw from: active (when the API says so).
+function isProductActive(product) {
+  return Boolean(product) && product.is_active !== false;
+}
+
+// How many combos the current stock allows: the scarcest product limits it.
+// Mirrors the backend `available_quantity`; keep in sync.
+export function comboAvailableUnits(items, products) {
+  if (items.length === 0) return 0;
+  const units = items.map(({ productId, quantity }) => {
+    const product = products.find((p) => p.id === productId);
+    if (!isProductActive(product) || quantity <= 0) return 0;
+    return Math.floor(Number(product.stock) / quantity);
+  });
+  return Math.min(...units);
+}
+
+// Items without enough stock (or inactive). When editing, only new items or
+// ones with a higher quantity than before are checked, as the backend does
+// (`originalItems` = combo items before editing).
+export function shortItems(items, products, originalItems = []) {
+  return items.flatMap(({ productId, quantity }) => {
+    const original = originalItems.find((o) => o.productId === productId);
+    if (original && quantity <= original.quantity) return [];
+    const product = products.find((p) => p.id === productId);
+    const isShort =
+      !isProductActive(product) || Number(product.stock) < quantity;
+    if (!isShort) return [];
+    return [{ productId, quantity, name: product?.name ?? original?.name }];
+  });
+}
+
 // `isEditing`: an existing combo already has an image on the server.
-export function validateCombo(form, isEditing) {
+// `originalItems`: the combo items before editing (empty when creating).
+export function validateCombo(form, isEditing, products, originalItems = []) {
   const errors = {};
   if (!form.name.trim()) errors.name = "Ponle un nombre a la promoción.";
   if (form.items.length === 0)
     errors.items = "Agrega al menos un producto al combo.";
+  else {
+    const short = shortItems(form.items, products, originalItems);
+    if (short.length > 0)
+      errors.items = `Sin stock suficiente: ${short
+        .map((item) => item.name ?? "producto")
+        .join(", ")}.`;
+  }
   if (form.price === "" || Number(form.price) <= 0)
     errors.price = "Ingresa un precio válido mayor a 0.";
   if (!isEditing && !form.imageFile)

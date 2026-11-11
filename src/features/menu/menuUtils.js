@@ -1,4 +1,4 @@
-import { pad2 } from "../../lib/promoRules";
+import { pad2 } from "../../lib/dates";
 
 const MONTH_NAMES = [
   "Enero",
@@ -127,40 +127,31 @@ export function adaptDish(d) {
   };
 }
 
-// Labels of the status the backend derives from the promotion dates.
-export const PROMO_STATUS = {
+// Labels of the status the backend derives from the combo dates.
+export const COMBO_STATUS = {
   ACTIVE: { label: "Activa", tone: "success" },
   SCHEDULED: { label: "Programada", tone: "warning" },
   EXPIRED: { label: "Vencida", tone: "neutral" },
 };
 
-// API promotion -> shape used by the UI.
-export function adaptPromotion(p) {
-  return {
-    id: p.id,
-    products: p.products.map((product) => product.id),
-    productNames: p.products.map((product) => product.name),
-    discount: p.discount_percentage,
-    startDate: p.start_date,
-    endDate: p.end_date,
-    image: p.image || null,
-    status: p.status,
-    institutionName: p.institution_name || null,
-  };
-}
-
-// API combo -> shape used by the UI.
+// API combo -> shape used by the UI. The stock fields are tolerant of an older
+// backend that does not send them (`availableQuantity` null = unknown).
 export function adaptCombo(c) {
   return {
     id: c.id,
     name: c.name,
     price: Number(c.price),
     regularPrice: Number(c.regular_price),
+    availableQuantity:
+      c.available_quantity == null ? null : Number(c.available_quantity),
+    isAvailable: c.is_available ?? true,
     items: c.items.map((item) => ({
       productId: item.product_id,
       name: item.name,
       price: Number(item.price),
       quantity: item.quantity,
+      stock: item.stock == null ? null : Number(item.stock),
+      isActive: item.is_active ?? true,
     })),
     startDate: c.start_date,
     endDate: c.end_date,
@@ -168,6 +159,15 @@ export function adaptCombo(c) {
     status: c.status,
     institutionName: c.institution_name || null,
   };
+}
+
+// Items of an adapted combo that keep it from being sold: inactive product or
+// less stock than the quantity the combo needs. Unknown stock is not missing.
+export function comboMissingItems(combo) {
+  return combo.items.filter(
+    (item) =>
+      !item.isActive || (item.stock !== null && item.stock < item.quantity),
+  );
 }
 
 // Newest month first.
