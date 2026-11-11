@@ -37,7 +37,7 @@ export default function BucketDetailPanel({ bucket, summary, top, onClose }) {
           </button>
         }
       />
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <MiniStat
           label="Ingresos"
           value={kpis ? formatMoney(kpis.revenue.current) : "—"}

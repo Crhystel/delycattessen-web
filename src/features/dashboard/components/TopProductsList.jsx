@@ -1,4 +1,5 @@
 import { useState } from "react";
+import SegmentedTabs from "../../../components/ui/SegmentedTabs";
 import { formatCount, formatMoney } from "../dashboardUtils";
 
 const METRICS = [
@@ -31,21 +32,13 @@ export default function TopProductsList({
 
   return (
     <div>
-      <div className="flex bg-ink-50 rounded-lg p-0.5 w-fit text-xs mb-3">
-        {METRICS.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMetricId(id)}
-            className={`px-3 py-1 rounded-md font-medium transition-colors ${
-              metricId === id
-                ? "bg-white text-ink-900 shadow-sm"
-                : "text-ink-500 hover:text-ink-900"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="mb-3">
+        <SegmentedTabs
+          tabs={METRICS}
+          value={metricId}
+          onChange={setMetricId}
+          size="sm"
+        />
       </div>
       {rows.length === 0 ? (
         <p className="text-sm text-ink-300 py-6 text-center">
