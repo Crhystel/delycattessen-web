@@ -47,8 +47,8 @@ export default function DiscountProductOption({ product, discount, chosen, block
       ) : (
         <UtensilsCrossed size={16} className="text-ink-400 shrink-0" />
       )}
-      <span className="text-xs font-medium text-ink-900 truncate">
-        {product.name}
+      <span className="min-w-0 text-xs font-medium text-ink-900">
+        <span className="block truncate">{product.name}</span>
         <PriceTag price={product.price} discount={discount} />
         {blocked && (
           <span className="block text-[10px] text-ink-400">

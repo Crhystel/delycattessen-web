@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Upload, UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
+import ImageUploadField from "../../../components/ui/ImageUploadField";
 import { Field, Input, Textarea } from "../../../components/ui/Field";
 import { useToast } from "../../../context/ToastContext";
 import IngredientAllergenFields from "../../catalog/components/IngredientAllergenFields";
@@ -115,7 +116,7 @@ export default function DishFormModal({ dish, catalog, onSave, onClose }) {
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col gap-1 sm:items-end">
             {selection.pending.length > 0 && (
               <p className="text-xs text-danger-600">
                 Falta confirmar alérgenos de:{" "}
@@ -172,29 +173,15 @@ export default function DishFormModal({ dish, catalog, onSave, onClose }) {
         </Field>
 
         <Field label="Imagen del platillo">
-          <div className="flex items-center gap-3">
-            {form.image ? (
-              <img
-                src={form.image}
-                alt="Vista previa"
-                className="w-12 h-12 rounded-lg object-cover border border-ink-100"
-              />
-            ) : (
+          <ImageUploadField
+            image={form.image}
+            onFile={handleImageFile}
+            fallback={
               <div className="w-12 h-12 rounded-lg bg-ink-100 text-ink-400 flex items-center justify-center shrink-0">
                 <UtensilsCrossed size={20} />
               </div>
-            )}
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
-              <Upload size={15} />
-              Subir imagen
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageFile}
-              />
-            </label>
-          </div>
+            }
+          />
           {errors.image && (
             <p className="text-xs text-danger-600 mt-1.5">{errors.image}</p>
           )}

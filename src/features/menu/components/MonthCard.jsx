@@ -11,6 +11,8 @@ import {
 import Card from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
 import Badge from "../../../components/ui/Badge";
+import Sheet from "../../../components/ui/Sheet";
+import useMediaQuery from "../../../hooks/useMediaQuery";
 import { monthStats } from "../menuUtils";
 import MonthlyCalendar from "./MonthlyCalendar";
 import DayEditPanel from "./DayEditPanel";
@@ -39,6 +41,9 @@ export default function MonthCard({
   onUnpublish,
 }) {
   const [selectedDate, setSelectedDate] = useState(null);
+  // From `lg` the day panel sits beside the calendar; below it opens as a bottom
+  // sheet, because stacked under the calendar it would be out of sight.
+  const isWide = useMediaQuery("(min-width: 1024px)");
 
   const stats = monthStats(menu);
   const percentage =
@@ -51,10 +56,21 @@ export default function MonthCard({
     : 0;
   const isPublished = menu.status === "Publicado";
 
+  const dayPanel = selectedDate && (
+    <DayEditPanel
+      date={selectedDate}
+      dishes={dishes}
+      dayDishes={dayDishes}
+      dayPreorders={dayPreorders}
+      onToggleDish={(dishId) => onToggleDish(selectedDate, dishId)}
+      onClose={() => setSelectedDate(null)}
+    />
+  );
+
   return (
     <Card padded={false}>
-      <div className="px-5 py-3.5 border-b border-ink-100 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2.5">
+      <div className="px-4 sm:px-5 py-3.5 border-b border-ink-100 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
             <CalendarDays size={16} />
           </div>
@@ -104,7 +120,7 @@ export default function MonthCard({
         </div>
       )}
 
-      <div className="p-5 space-y-4">
+      <div className="p-4 sm:p-5 space-y-4">
         <div>
           <div className="flex items-center justify-between text-xs text-ink-500 mb-1.5">
             <span>Progreso del mes</span>
@@ -139,7 +155,7 @@ export default function MonthCard({
         </div>
 
         <div className="flex flex-col lg:flex-row gap-5">
-          <div className="lg:w-[400px] shrink-0">
+          <div className="w-full lg:w-[400px] shrink-0">
             <MonthlyCalendar
               year={menu.year}
               monthIndex={menu.monthIndex}
@@ -149,25 +165,29 @@ export default function MonthCard({
               selectedDate={selectedDate}
             />
           </div>
-          <div className="flex-1 min-w-0">
-            {selectedDate ? (
-              <DayEditPanel
-                date={selectedDate}
-                dishes={dishes}
-                dayDishes={dayDishes}
-                dayPreorders={dayPreorders}
-                onToggleDish={(dishId) => onToggleDish(selectedDate, dishId)}
-                onClose={() => setSelectedDate(null)}
-              />
-            ) : (
-              <div className="h-full min-h-[180px] flex items-center justify-center rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-6">
-                Selecciona un día del calendario para ver y editar sus platos
-                y bebidas.
-              </div>
-            )}
-          </div>
+          {isWide && (
+            <div className="flex-1 min-w-0">
+              {dayPanel || (
+                <div className="h-full min-h-[180px] flex items-center justify-center rounded-xl border border-dashed border-ink-200 text-xs text-ink-400 text-center px-6">
+                  Selecciona un día del calendario para ver y editar sus platos
+                  y bebidas.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {!isWide && (
+        <Sheet
+          open={Boolean(selectedDate)}
+          onClose={() => setSelectedDate(null)}
+          placement="bottom"
+          label="Editar día del menú"
+        >
+          <div className="p-3">{dayPanel}</div>
+        </Sheet>
+      )}
     </Card>
   );
 }

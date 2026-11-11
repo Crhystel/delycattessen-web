@@ -45,13 +45,15 @@ function DishCard({ dish, showInstitution, onEdit, onDelete }) {
       <div className="flex flex-col gap-1 shrink-0">
         <button
           onClick={() => onEdit(dish)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
+          aria-label="Editar platillo"
+          className="w-9 h-9 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
         >
           <Pencil size={13} />
         </button>
         <button
           onClick={() => onDelete(dish.id)}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
+          aria-label="Eliminar platillo"
+          className="w-9 h-9 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
         >
           <Trash2 size={13} />
         </button>

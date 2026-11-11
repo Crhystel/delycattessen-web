@@ -1,79 +1,46 @@
-import { Pencil, Trash2, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
+import DataTable from "../../../components/ui/DataTable";
+import RowIconActions from "../../../components/ui/RowIconActions";
 import { PROMO_STATUS } from "../menuUtils";
 
-function ComboRow({ combo, showInstitution, onEdit, onDelete }) {
-  const status = PROMO_STATUS[combo.status] ?? PROMO_STATUS.EXPIRED;
-
-  function handleDelete() {
-    if (
-      window.confirm(
-        `¿Eliminar la promoción "${combo.name}"? Dejará de ofrecerse en caja.`,
-      )
-    )
-      onDelete(combo.id);
-  }
-
+function ComboInfo({ combo }) {
   return (
-    <tr className="border-b border-ink-100 last:border-0 hover:bg-ink-50/60">
-      <td className="px-5 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-14 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 overflow-hidden">
-            {combo.image ? (
-              <img
-                src={combo.image}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Package size={15} />
-            )}
-          </div>
-          <div>
-            <p className="font-medium text-ink-900">{combo.name}</p>
-            <p className="text-xs text-ink-400">
-              {combo.items
-                .map((item) => `${item.quantity}× ${item.name}`)
-                .join(" + ")}
-            </p>
-          </div>
-        </div>
-      </td>
-      {showInstitution && (
-        <td className="px-5 py-3 text-ink-500">{combo.institutionName}</td>
-      )}
-      <td className="px-5 py-3">
-        <span className="text-ink-300 line-through text-xs mr-1.5">
-          ${combo.regularPrice.toFixed(2)}
-        </span>
-        <span className="text-teal-700 font-semibold">
-          ${combo.price.toFixed(2)}
-        </span>
-      </td>
-      <td className="px-5 py-3 text-ink-500">{combo.startDate}</td>
-      <td className="px-5 py-3 text-ink-500">{combo.endDate}</td>
-      <td className="px-5 py-3">
-        <Badge tone={status.tone}>{status.label}</Badge>
-      </td>
-      <td className="px-5 py-3 text-right">
-        <div className="flex justify-end gap-1.5">
-          <button
-            onClick={() => onEdit(combo)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100"
-          >
-            <Pencil size={15} />
-          </button>
-          <button
-            onClick={handleDelete}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-danger-500 hover:bg-danger-50"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      </td>
-    </tr>
+    <div className="flex items-center gap-2.5 min-w-0">
+      <div className="w-14 h-9 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0 overflow-hidden">
+        {combo.image ? (
+          <img src={combo.image} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <Package size={15} />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="font-medium text-ink-900">{combo.name}</p>
+        <p className="text-xs text-ink-400">
+          {combo.items.map((item) => `${item.quantity}× ${item.name}`).join(" + ")}
+        </p>
+      </div>
+    </div>
   );
+}
+
+function ComboPrice({ combo }) {
+  return (
+    <span>
+      <span className="text-ink-300 line-through text-xs mr-1.5">
+        ${combo.regularPrice.toFixed(2)}
+      </span>
+      <span className="text-teal-700 font-semibold">
+        ${combo.price.toFixed(2)}
+      </span>
+    </span>
+  );
+}
+
+function ComboStatus({ combo }) {
+  const status = PROMO_STATUS[combo.status] ?? PROMO_STATUS.EXPIRED;
+  return <Badge tone={status.tone}>{status.label}</Badge>;
 }
 
 export default function CombosTab({
@@ -83,7 +50,68 @@ export default function CombosTab({
   onEdit,
   onDelete,
 }) {
-  const colSpan = showInstitution ? 7 : 6;
+  function handleDelete(combo) {
+    if (
+      window.confirm(
+        `¿Eliminar la promoción "${combo.name}"? Dejará de ofrecerse en caja.`,
+      )
+    )
+      onDelete(combo.id);
+  }
+
+  const actionsFor = (combo) => (
+    <RowIconActions
+      label="promoción"
+      onEdit={() => onEdit(combo)}
+      onDelete={() => handleDelete(combo)}
+    />
+  );
+
+  const columns = [
+    {
+      key: "combo",
+      header: "Combo",
+      cell: (combo) => <ComboInfo combo={combo} />,
+    },
+    ...(showInstitution
+      ? [
+          {
+            key: "institution",
+            header: "Sede",
+            className: "text-ink-500",
+            cell: (combo) => combo.institutionName,
+          },
+        ]
+      : []),
+    {
+      key: "price",
+      header: "Precio",
+      cell: (combo) => <ComboPrice combo={combo} />,
+    },
+    {
+      key: "start",
+      header: "Fecha inicio",
+      className: "text-ink-500",
+      cell: (combo) => combo.startDate,
+    },
+    {
+      key: "end",
+      header: "Fecha vencimiento",
+      className: "text-ink-500",
+      cell: (combo) => combo.endDate,
+    },
+    {
+      key: "status",
+      header: "Estado",
+      cell: (combo) => <ComboStatus combo={combo} />,
+    },
+    {
+      key: "actions",
+      header: "Acciones",
+      align: "right",
+      cell: (combo) => <div className="flex justify-end">{actionsFor(combo)}</div>,
+    },
+  ];
 
   return (
     <div className="space-y-4">
@@ -95,55 +123,30 @@ export default function CombosTab({
       </div>
 
       <Card padded={false}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-ink-500 border-b border-ink-100">
-                <th className="px-5 py-3 font-medium">Combo</th>
-                {showInstitution && (
-                  <th className="px-5 py-3 font-medium">Sede</th>
-                )}
-                <th className="px-5 py-3 font-medium">Precio</th>
-                <th className="px-5 py-3 font-medium">Fecha inicio</th>
-                <th className="px-5 py-3 font-medium">Fecha vencimiento</th>
-                <th className="px-5 py-3 font-medium">Estado</th>
-                <th className="px-5 py-3 font-medium text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && (
-                <tr>
-                  <td
-                    colSpan={colSpan}
-                    className="px-5 py-8 text-center text-ink-300"
-                  >
-                    Cargando promociones...
-                  </td>
-                </tr>
+        <DataTable
+          columns={columns}
+          rows={combos}
+          rowKey={(combo) => combo.id}
+          loading={loading}
+          loadingText="Cargando promociones..."
+          emptyText="No hay promociones registradas."
+          renderCard={(combo) => (
+            <div className="space-y-3">
+              <ComboInfo combo={combo} />
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
+                <ComboPrice combo={combo} />
+                <span className="text-ink-500">
+                  {combo.startDate} → {combo.endDate}
+                </span>
+                <ComboStatus combo={combo} />
+              </div>
+              {showInstitution && (
+                <p className="text-xs text-ink-400">{combo.institutionName}</p>
               )}
-              {!loading &&
-                combos.map((combo) => (
-                  <ComboRow
-                    key={combo.id}
-                    combo={combo}
-                    showInstitution={showInstitution}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                ))}
-              {!loading && combos.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={colSpan}
-                    className="px-5 py-8 text-center text-ink-300"
-                  >
-                    No hay promociones registradas.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              <div className="flex justify-end">{actionsFor(combo)}</div>
+            </div>
+          )}
+        />
       </Card>
     </div>
   );
