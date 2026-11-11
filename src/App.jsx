@@ -6,6 +6,7 @@ import { IsAdmin } from "./lib/permissions";
 import ToastContainer from "./components/ui/ToastContainer";
 import ProtectedRoute from "./features/auth/components/ProtectedRoute";
 import LoginPage from "./features/auth/LoginPage";
+import ChangePasswordPage from "./features/auth/ChangePasswordPage";
 import AdminLayout from "./layouts/AdminLayout";
 import DashboardPage from "./features/dashboard/DashboardPage";
 import UsersPage from "./features/users/UsersPage";
@@ -23,6 +24,17 @@ export default function App() {
           <BrowserRouter basename={import.meta.env.BASE_URL}>
             <Routes>
               <Route path="/" element={<LoginPage />} />
+              <Route
+                path="/cambiar-contrasena"
+                element={
+                  <ProtectedRoute
+                    permission={adminPermission}
+                    allowPendingPasswordChange
+                  >
+                    <ChangePasswordPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/admin"
                 element={

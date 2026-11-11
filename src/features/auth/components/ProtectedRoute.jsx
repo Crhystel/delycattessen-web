@@ -4,9 +4,12 @@ import { IsAuthenticated } from "../../../lib/permissions";
 
 const defaultPermission = new IsAuthenticated();
 
+// `allowPendingPasswordChange` is only for the screen where that change is made: every
+// other protected route sends an account with a temporary password there first.
 export default function ProtectedRoute({
   children,
   permission = defaultPermission,
+  allowPendingPasswordChange = false,
 }) {
   const auth = useAuth();
 
@@ -18,5 +21,8 @@ export default function ProtectedRoute({
     );
   }
   if (!permission.hasPermission(auth)) return <Navigate to="/" replace />;
+  if (auth.mustChangePassword && !allowPendingPasswordChange) {
+    return <Navigate to="/cambiar-contrasena" replace />;
+  }
   return children;
 }
