@@ -141,7 +141,14 @@ export default function Topbar({ title, subtitle }) {
                     onClick={() => selectInstitution(inst.id)}
                     className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-ink-700 hover:bg-ink-50"
                   >
-                    {inst.name}
+                    <span className="truncate">
+                      {inst.name}
+                      {inst.is_active === false && (
+                        <span className="ml-2 text-xs font-medium text-warning-600">
+                          Suspendida
+                        </span>
+                      )}
+                    </span>
                     {selectedInstitution === inst.id && (
                       <Check size={14} className="text-teal-600" />
                     )}

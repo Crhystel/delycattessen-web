@@ -6,7 +6,11 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { login as loginRequest, getMe } from "../features/auth/services";
+import {
+  login as loginRequest,
+  getMe,
+  changePassword as changePasswordRequest,
+} from "../features/auth/services";
 import { authEvents, SESSION_EXPIRED } from "../lib/eventBus";
 import {
   isStoredSessionIdle,
@@ -112,13 +116,30 @@ export function AuthProvider({ children }) {
     [updateUser],
   );
 
+  // Own password change (also the forced one after a temporary password): the server
+  // rotates the tokens, so the new ones replace the stored pair.
+  const changePassword = useCallback(
+    async (values) => {
+      const data = await changePasswordRequest(values);
+      if (data.access) {
+        tokenStore.setTokens(data);
+        setToken(data.access);
+      }
+      updateUser(await getMe());
+      return data;
+    },
+    [updateUser],
+  );
+
   const value = useMemo(
     () => ({
       token,
       user,
       role: user?.role ?? null,
+      mustChangePassword: Boolean(user?.must_change_password),
       updateUser,
       login,
+      changePassword,
       logout,
       isAuthenticated: !!token,
       isLoadingUser,
@@ -131,6 +152,7 @@ export function AuthProvider({ children }) {
       user,
       updateUser,
       login,
+      changePassword,
       logout,
       isLoadingUser,
       sessionExpired,

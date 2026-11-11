@@ -36,7 +36,7 @@ export default function ForgotPasswordModal({ open, onClose }) {
     setError("");
     try {
       const data = await requestPasswordReset(email);
-      setMessage(data.mensaje);
+      setMessage(data.message);
       setStep(2);
     } catch (err) {
       setError(err.message || "No se pudo procesar la solicitud.");
