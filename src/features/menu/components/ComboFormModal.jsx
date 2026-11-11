@@ -10,17 +10,20 @@ import {
   emptyComboForm,
   comboToForm,
   regularPrice,
+  comboAvailableUnits,
   validateCombo,
   formToComboPayload,
 } from "../comboForm";
 
 function ProductQuantity({ product, quantity, onChange }) {
   const chosen = quantity > 0;
+  const stock = Number(product.stock) || 0;
+  const unavailable = product.is_active === false || stock <= 0;
   return (
     <div
       className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${
         chosen ? "border-teal-500 bg-teal-50" : "border-ink-100"
-      }`}
+      } ${unavailable ? "opacity-50" : ""}`}
     >
       {isImageSource(product.image) ? (
         <img
@@ -34,7 +37,8 @@ function ProductQuantity({ product, quantity, onChange }) {
       <span className="text-xs font-medium text-ink-900 truncate flex-1">
         {product.name}
         <span className="block text-[11px] text-ink-500">
-          ${Number(product.price).toFixed(2)}
+          ${Number(product.price).toFixed(2)} ·{" "}
+          {unavailable ? "Sin stock" : `Stock: ${stock}`}
         </span>
       </span>
       <div className="flex items-center gap-1 shrink-0">
@@ -49,8 +53,9 @@ function ProductQuantity({ product, quantity, onChange }) {
         <span className="w-4 text-center text-xs font-semibold">{quantity}</span>
         <button
           type="button"
+          disabled={unavailable || quantity >= stock}
           onClick={() => onChange(quantity + 1)}
-          className="w-6 h-6 rounded-md flex items-center justify-center text-teal-600 hover:bg-teal-100"
+          className="w-6 h-6 rounded-md flex items-center justify-center text-teal-600 hover:bg-teal-100 disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <Plus size={12} />
         </button>
@@ -69,6 +74,7 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
   const [isSaving, setIsSaving] = useState(false);
 
   const normalPrice = regularPrice(form.items, products);
+  const availableUnits = comboAvailableUnits(form.items, products);
   const quantityOf = (productId) =>
     form.items.find((item) => item.productId === productId)?.quantity ?? 0;
 
@@ -98,7 +104,12 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    const validationErrors = validateCombo(form, Boolean(combo));
+    const validationErrors = validateCombo(
+      form,
+      Boolean(combo),
+      products,
+      combo?.items,
+    );
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -158,6 +169,14 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
                 />
               ))}
             </div>
+          )}
+          {form.items.length > 0 && (
+            <p className="text-xs text-ink-500 mt-2">
+              Stock del combo:{" "}
+              <span className="font-semibold text-ink-900">
+                {availableUnits} u.
+              </span>
+            </p>
           )}
           {errors.items && (
             <p className="text-xs text-danger-600 mt-1.5">{errors.items}</p>

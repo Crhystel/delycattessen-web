@@ -3,7 +3,8 @@ import Card from "../../../components/ui/Card";
 import Badge from "../../../components/ui/Badge";
 import DataTable from "../../../components/ui/DataTable";
 import RowIconActions from "../../../components/ui/RowIconActions";
-import { PROMO_STATUS } from "../menuUtils";
+import VisibilityBadge from "../../../components/ui/VisibilityBadge";
+import { PROMO_STATUS, comboMissingItems } from "../menuUtils";
 
 function ComboInfo({ combo }) {
   return (
@@ -38,6 +39,21 @@ function ComboPrice({ combo }) {
   );
 }
 
+function ComboStock({ combo }) {
+  if (combo.availableQuantity === null) return null;
+  const missing = comboMissingItems(combo);
+  return (
+    <div className="text-ink-700">
+      <span>{combo.availableQuantity} u.</span>
+      {missing.length > 0 && (
+        <p className="text-xs text-danger-600">
+          Falta: {missing.map((item) => item.name).join(", ")}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ComboStatus({ combo }) {
   const status = PROMO_STATUS[combo.status] ?? PROMO_STATUS.EXPIRED;
   return <Badge tone={status.tone}>{status.label}</Badge>;
@@ -67,6 +83,9 @@ export default function CombosTab({
     />
   );
 
+  // An older backend does not send the combo stock: then it is not shown.
+  const hasStock = combos.some((combo) => combo.availableQuantity !== null);
+
   const columns = [
     {
       key: "combo",
@@ -88,6 +107,23 @@ export default function CombosTab({
       header: "Precio",
       cell: (combo) => <ComboPrice combo={combo} />,
     },
+    ...(hasStock
+      ? [
+          {
+            key: "stock",
+            header: "Stock",
+            className: "text-ink-700",
+            cell: (combo) => <ComboStock combo={combo} />,
+          },
+          {
+            key: "visibility",
+            header: "Visibilidad",
+            cell: (combo) => (
+              <VisibilityBadge visible={combo.availableQuantity > 0} />
+            ),
+          },
+        ]
+      : []),
     {
       key: "start",
       header: "Fecha inicio",
@@ -130,11 +166,15 @@ export default function CombosTab({
           loading={loading}
           loadingText="Cargando promociones..."
           emptyText="No hay promociones registradas."
+          rowClassName={(combo) =>
+            `transition-opacity ${combo.availableQuantity === 0 ? "opacity-50" : ""}`
+          }
           renderCard={(combo) => (
             <div className="space-y-3">
               <ComboInfo combo={combo} />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm">
                 <ComboPrice combo={combo} />
+                <ComboStock combo={combo} />
                 <span className="text-ink-500">
                   {combo.startDate} → {combo.endDate}
                 </span>
@@ -143,7 +183,14 @@ export default function CombosTab({
               {showInstitution && (
                 <p className="text-xs text-ink-400">{combo.institutionName}</p>
               )}
-              <div className="flex justify-end">{actionsFor(combo)}</div>
+              <div className="flex items-center justify-between gap-3">
+                {combo.availableQuantity !== null ? (
+                  <VisibilityBadge visible={combo.availableQuantity > 0} />
+                ) : (
+                  <span />
+                )}
+                {actionsFor(combo)}
+              </div>
             </div>
           )}
         />

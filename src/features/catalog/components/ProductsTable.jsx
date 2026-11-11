@@ -1,6 +1,6 @@
-import { EyeOff } from "lucide-react";
 import Badge from "../../../components/ui/Badge";
 import DataTable from "../../../components/ui/DataTable";
+import VisibilityBadge from "../../../components/ui/VisibilityBadge";
 import RowIconActions from "../../../components/ui/RowIconActions";
 import { isImageSource } from "../../../lib/images";
 
@@ -56,16 +56,6 @@ function ProductInfo({ product, onPreview }) {
         )}
       </div>
     </div>
-  );
-}
-
-function VisibilityBadge({ product }) {
-  if (product.stock > 0) return <Badge tone="success">Visible</Badge>;
-  return (
-    <Badge tone="danger">
-      <EyeOff size={11} />
-      Oculto · sin stock
-    </Badge>
   );
 }
 
@@ -125,7 +115,7 @@ export default function ProductsTable({
     {
       key: "visibility",
       header: "Visibilidad",
-      cell: (product) => <VisibilityBadge product={product} />,
+      cell: (product) => <VisibilityBadge visible={product.stock > 0} />,
     },
     {
       key: "actions",
@@ -162,7 +152,7 @@ export default function ProductsTable({
             )}
           </div>
           <div className="flex items-center justify-between gap-3">
-            <VisibilityBadge product={product} />
+            <VisibilityBadge visible={product.stock > 0} />
             <ProductActions
               product={product}
               onEdit={onEdit}
