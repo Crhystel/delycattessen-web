@@ -3,30 +3,49 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import Badge from "../../../components/ui/Badge";
 import { formatAmount } from "../reportUtils";
 
-function SalesDetail({ sales }) {
+// Columns that phones drop from the row (see TeacherRow); the detail shows them instead.
+const HIDE_ON_PHONE = "hidden md:table-cell";
+
+function SalesDetail({ teacher }) {
   return (
     <tr className="bg-ink-50/60">
-      <td colSpan={6} className="px-5 py-3">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="text-left text-ink-400">
-              <th className="py-1 font-medium">Fecha</th>
-              <th className="py-1 font-medium">Hora</th>
-              <th className="py-1 font-medium">Productos</th>
-              <th className="py-1 font-medium text-right">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.map((sale) => (
-              <tr key={sale.id} className="text-ink-700">
-                <td className="py-1">{sale.date}</td>
-                <td className="py-1">{sale.time}</td>
-                <td className="py-1">{sale.products}</td>
-                <td className="py-1 text-right">{formatAmount(sale.amount)}</td>
+      <td colSpan={6} className="px-4 sm:px-5 py-3">
+        <dl className="md:hidden mb-3 space-y-1 text-xs text-ink-500">
+          <div className="flex gap-2">
+            <dt className="font-medium">Correo:</dt>
+            <dd className="min-w-0 break-all">{teacher.email || "—"}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="font-medium">Sede:</dt>
+            <dd>{teacher.institutionName}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="font-medium">N.º de consumos:</dt>
+            <dd>{teacher.consumptions}</dd>
+          </div>
+        </dl>
+        <div className="overflow-x-auto scroll-soft">
+          <table className="w-full min-w-[28rem] text-xs">
+            <thead>
+              <tr className="text-left text-ink-400">
+                <th className="py-1 font-medium">Fecha</th>
+                <th className="py-1 font-medium">Hora</th>
+                <th className="py-1 font-medium">Productos</th>
+                <th className="py-1 font-medium text-right">Monto</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {teacher.sales.map((sale) => (
+                <tr key={sale.id} className="text-ink-700">
+                  <td className="py-1">{sale.date}</td>
+                  <td className="py-1">{sale.time}</td>
+                  <td className="py-1">{sale.products}</td>
+                  <td className="py-1 text-right">{formatAmount(sale.amount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </td>
     </tr>
   );
@@ -64,9 +83,15 @@ function TeacherRow({ teacher, expanded, onToggle }) {
             {teacher.fullName}
           </span>
         </td>
-        <td className="px-5 py-3 text-ink-500">{teacher.email || "—"}</td>
-        <td className="px-5 py-3 text-ink-500">{teacher.institutionName}</td>
-        <td className="px-5 py-3 text-ink-700">{teacher.consumptions}</td>
+        <td className={`px-5 py-3 text-ink-500 ${HIDE_ON_PHONE}`}>
+          {teacher.email || "—"}
+        </td>
+        <td className={`px-5 py-3 text-ink-500 ${HIDE_ON_PHONE}`}>
+          {teacher.institutionName}
+        </td>
+        <td className={`px-5 py-3 text-ink-700 ${HIDE_ON_PHONE}`}>
+          {teacher.consumptions}
+        </td>
         <td className="px-5 py-3 text-right font-semibold text-ink-900">
           {formatAmount(teacher.total)}
         </td>
@@ -74,7 +99,7 @@ function TeacherRow({ teacher, expanded, onToggle }) {
           <StatementBadge teacher={teacher} />
         </td>
       </tr>
-      {expanded && <SalesDetail sales={teacher.sales} />}
+      {expanded && <SalesDetail teacher={teacher} />}
     </>
   );
 }
@@ -85,14 +110,16 @@ export default function TeacherCreditTable({ report, loading }) {
   const teachers = report?.teachers ?? [];
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-soft">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-ink-500 border-b border-ink-100">
             <th className="px-5 py-3 font-medium">Docente</th>
-            <th className="px-5 py-3 font-medium">Correo</th>
-            <th className="px-5 py-3 font-medium">Sede</th>
-            <th className="px-5 py-3 font-medium">N.º de consumos</th>
+            <th className={`px-5 py-3 font-medium ${HIDE_ON_PHONE}`}>Correo</th>
+            <th className={`px-5 py-3 font-medium ${HIDE_ON_PHONE}`}>Sede</th>
+            <th className={`px-5 py-3 font-medium ${HIDE_ON_PHONE}`}>
+              N.º de consumos
+            </th>
             <th className="px-5 py-3 font-medium text-right">Total</th>
             <th className="px-5 py-3 font-medium">Estado de cuenta</th>
           </tr>
