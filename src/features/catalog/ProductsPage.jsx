@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
-import { Plus, Search, EyeOff } from "lucide-react";
+import { Plus, EyeOff } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import ImagePreviewOverlay from "../../components/ui/ImagePreviewOverlay";
+import PageContainer from "../../components/ui/PageContainer";
+import PageToolbar from "../../components/ui/PageToolbar";
+import SearchInput from "../../components/ui/SearchInput";
 import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
 import { useProducts } from "./hooks/useProducts";
@@ -42,36 +45,35 @@ export default function ProductsPage() {
         subtitle="Gestión de productos, ingredientes y stock"
       />
 
-      <main className="p-6 space-y-5">
+      <PageContainer>
         <Card padded={false}>
-          <div className="p-5 flex items-center justify-between flex-wrap gap-3 border-b border-ink-100">
-            <div className="relative w-full sm:w-72">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-300"
-              />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar producto..."
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-ink-100 text-sm outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setManageAllergensOpen(true)}
-              >
-                Gestionar alérgenos por ingrediente
-              </Button>
-              <Button icon={Plus} onClick={() => openForm()}>
-                Nuevo producto
-              </Button>
-            </div>
+          <div className="p-4 sm:p-5 border-b border-ink-100">
+            <PageToolbar
+              start={
+                <SearchInput
+                  value={query}
+                  onChange={setQuery}
+                  placeholder="Buscar producto..."
+                />
+              }
+              actions={
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => setManageAllergensOpen(true)}
+                  >
+                    Gestionar alérgenos por ingrediente
+                  </Button>
+                  <Button icon={Plus} onClick={() => openForm()}>
+                    Nuevo producto
+                  </Button>
+                </>
+              }
+            />
           </div>
 
-          <div className="px-5 py-2.5 border-b border-ink-100 bg-ink-50/50 text-xs text-ink-400 flex items-center gap-1.5">
-            <EyeOff size={13} />
+          <div className="px-4 sm:px-5 py-2.5 border-b border-ink-100 bg-ink-50/50 text-xs text-ink-400 flex items-start gap-1.5">
+            <EyeOff size={13} className="mt-0.5 shrink-0" />
             Los productos con stock en cero se atenúan y quedan ocultos
             automáticamente del catálogo activo.
           </div>
@@ -85,7 +87,7 @@ export default function ProductsPage() {
             onPreview={setPreviewImage}
           />
         </Card>
-      </main>
+      </PageContainer>
 
       {form && (
         <ProductFormModal

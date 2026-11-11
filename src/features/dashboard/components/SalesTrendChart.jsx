@@ -8,6 +8,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import useMediaQuery from "../../../hooks/useMediaQuery";
 import { AXIS_COLOR, CHANNELS, GRID_COLOR } from "../chartPalette";
 import { formatMoney, rangeLabel } from "../dashboardUtils";
 
@@ -52,22 +53,27 @@ export default function SalesTrendChart({
   highlighted,
   onSelect,
 }) {
+  // Recharts sizes in pixels, so the compact layout cannot be done with classes.
+  const isWide = useMediaQuery("(min-width: 640px)");
+  const tickFontSize = isWide ? 12 : 11;
+
   return (
     <div className="[&_*]:outline-none">
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={isWide ? 300 : 240}>
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_COLOR} />
           <XAxis
             dataKey="label"
             tickLine={false}
             axisLine={false}
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            minTickGap={isWide ? 5 : 12}
+            tick={{ fill: AXIS_COLOR, fontSize: tickFontSize }}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
-            width={56}
-            tick={{ fill: AXIS_COLOR, fontSize: 12 }}
+            width={isWide ? 56 : 44}
+            tick={{ fill: AXIS_COLOR, fontSize: tickFontSize }}
             tickFormatter={(value) => `$${value}`}
           />
           <Tooltip

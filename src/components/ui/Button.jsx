@@ -25,15 +25,15 @@ export default function Button({
   return (
     <button
       type={type}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold
+      className={`inline-flex items-center justify-center gap-2 rounded-xl font-semibold whitespace-nowrap
         transition-colors duration-150 outline-none focus-visible:ring-4
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
-      {Icon && iconPosition === 'left' && <Icon size={17} strokeWidth={2.2} />}
+      {Icon && iconPosition === 'left' && <Icon size={17} strokeWidth={2.2} className="shrink-0" />}
       {children}
-      {Icon && iconPosition === 'right' && <Icon size={17} strokeWidth={2.2} />}
+      {Icon && iconPosition === 'right' && <Icon size={17} strokeWidth={2.2} className="shrink-0" />}
     </button>
   )
 }

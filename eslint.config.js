@@ -23,6 +23,11 @@ export default defineConfig([
     },
   },
   {
+    // Build config runs in Node (it reads process.env), not in the browser.
+    files: ['vite.config.js', 'eslint.config.js'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     // Contexts export their Provider and hook from the same file by design.
     files: ['src/context/**/*.{js,jsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },

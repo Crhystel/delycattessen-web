@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Plus, UtensilsCrossed } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Button from "../../components/ui/Button";
+import PageContainer from "../../components/ui/PageContainer";
+import PageToolbar from "../../components/ui/PageToolbar";
 import SegmentedTabs from "../../components/ui/SegmentedTabs";
 import { useInstitution } from "../../context/InstitutionContext";
 import { ALL_INSTITUTIONS } from "../../lib/institutions";
@@ -81,14 +83,15 @@ export default function MenuPage() {
         subtitle="Planificación mensual y campañas con vigencia definida"
       />
 
-      <main className="p-6 space-y-5">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />
-
-          <Button icon={action.icon} onClick={openNew[actionId]}>
-            {action.label}
-          </Button>
-        </div>
+      <PageContainer>
+        <PageToolbar
+          start={<SegmentedTabs tabs={TABS} value={tab} onChange={setTab} />}
+          actions={
+            <Button icon={action.icon} onClick={openNew[actionId]}>
+              {action.label}
+            </Button>
+          }
+        />
 
         {tab === "monthly" && (
           <div className="space-y-5">
@@ -127,7 +130,7 @@ export default function MenuPage() {
             onEditCombo={(combo) => setComboModal({ combo })}
           />
         )}
-      </main>
+      </PageContainer>
 
       {newMonthModal && (
         <NewMonthModal

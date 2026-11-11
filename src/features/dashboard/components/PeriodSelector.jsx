@@ -1,26 +1,6 @@
 import { Input } from "../../../components/ui/Field";
+import SegmentedTabs from "../../../components/ui/SegmentedTabs";
 import { GRANULARITIES, PERIOD_PRESETS } from "../dashboardUtils";
-
-function Segmented({ options, value, onChange }) {
-  return (
-    <div className="flex bg-white border border-ink-100 rounded-xl p-1 w-fit text-sm">
-      {options.map(({ id, label }) => (
-        <button
-          key={id}
-          type="button"
-          onClick={() => onChange(id)}
-          className={`px-3.5 py-1.5 rounded-lg font-medium transition-colors ${
-            value === id
-              ? "bg-teal-500 text-white"
-              : "text-ink-500 hover:text-ink-900"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 // Presets, custom date range and chart granularity.
 export default function PeriodSelector({
@@ -33,13 +13,14 @@ export default function PeriodSelector({
 }) {
   return (
     <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
-      <Segmented
-        options={PERIOD_PRESETS}
+      <SegmentedTabs
+        tabs={PERIOD_PRESETS}
         value={presetId}
         onChange={onPreset}
+        size="sm"
       />
-      <div className="flex items-center gap-2 text-sm text-ink-500">
-        <div className="w-40">
+      <div className="flex w-full items-center gap-2 text-sm text-ink-500 sm:w-auto">
+        <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
           <Input
             type="date"
             aria-label="Desde"
@@ -49,7 +30,7 @@ export default function PeriodSelector({
           />
         </div>
         <span>a</span>
-        <div className="w-40">
+        <div className="min-w-0 flex-1 sm:w-40 sm:flex-none">
           <Input
             type="date"
             aria-label="Hasta"
@@ -59,10 +40,11 @@ export default function PeriodSelector({
           />
         </div>
       </div>
-      <Segmented
-        options={GRANULARITIES}
+      <SegmentedTabs
+        tabs={GRANULARITIES}
         value={granularity}
         onChange={onGranularity}
+        size="sm"
       />
     </div>
   );

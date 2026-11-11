@@ -1,5 +1,6 @@
 import { UserCheck, UserX, Pencil, Trash2 } from "lucide-react";
 import Badge from "../../../components/ui/Badge";
+import DataTable from "../../../components/ui/DataTable";
 import { fullName } from "../staffForm";
 import {
   canDeleteStaff,
@@ -7,70 +8,56 @@ import {
   isManagedByOwner,
 } from "../staffRules";
 
-function StaffRow({
-  member,
-  showInstitution,
-  onEdit,
-  onToggleStatus,
-  onDelete,
-}) {
+function StatusBadge({ member }) {
   return (
-    <tr className="border-b border-ink-100 last:border-0 hover:bg-ink-50/60">
-      <td className="px-5 py-3 font-medium text-ink-900">
-        {fullName(member)}
-      </td>
-      <td className="px-5 py-3 text-ink-500">{member.email}</td>
-      {showInstitution && (
-        <td className="px-5 py-3 text-ink-500">{member.institution_name}</td>
-      )}
-      <td className="px-5 py-3">
-        <Badge tone={member.is_active ? "success" : "neutral"}>
-          {member.is_active ? "Activo" : "Inactivo"}
-        </Badge>
-      </td>
-      <td className="px-5 py-3 text-right">
-        <div className="flex items-center justify-end gap-2">
-          {isManagedByOwner(member) && (
-            <span className="text-xs text-ink-300">
-              Gestiona su propio perfil
-            </span>
-          )}
-          {canEditStaff(member) && (
-            <button
-              onClick={() => onEdit(member)}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-ink-600 bg-ink-50 hover:bg-ink-100 transition-colors"
-            >
-              <Pencil size={13} />
-              Editar
-            </button>
-          )}
-          <button
-            onClick={() => onToggleStatus(member)}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-              member.is_active
-                ? "text-danger-600 bg-danger-50 hover:bg-danger-100"
-                : "text-success-600 bg-success-50 hover:bg-success-100"
-            }`}
-          >
-            {member.is_active ? <UserX size={13} /> : <UserCheck size={13} />}
-            {member.is_active ? "Desactivar" : "Activar"}
-          </button>
-          {canDeleteStaff(member) && (
-            <button
-              onClick={() => onDelete(member)}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-danger-600 bg-danger-50 hover:bg-danger-100 transition-colors"
-            >
-              <Trash2 size={13} />
-              Eliminar
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
+    <Badge tone={member.is_active ? "success" : "neutral"}>
+      {member.is_active ? "Activo" : "Inactivo"}
+    </Badge>
   );
 }
 
 // Edit/delete are offered per account according to staffRules.
+function StaffActions({ member, onEdit, onToggleStatus, onDelete, align }) {
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 ${align === "end" ? "justify-end" : ""}`}
+    >
+      {isManagedByOwner(member) && (
+        <span className="text-xs text-ink-300">Gestiona su propio perfil</span>
+      )}
+      {canEditStaff(member) && (
+        <button
+          onClick={() => onEdit(member)}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 md:py-1.5 rounded-lg text-ink-600 bg-ink-50 hover:bg-ink-100 transition-colors"
+        >
+          <Pencil size={13} />
+          Editar
+        </button>
+      )}
+      <button
+        onClick={() => onToggleStatus(member)}
+        className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 md:py-1.5 rounded-lg transition-colors ${
+          member.is_active
+            ? "text-danger-600 bg-danger-50 hover:bg-danger-100"
+            : "text-success-600 bg-success-50 hover:bg-success-100"
+        }`}
+      >
+        {member.is_active ? <UserX size={13} /> : <UserCheck size={13} />}
+        {member.is_active ? "Desactivar" : "Activar"}
+      </button>
+      {canDeleteStaff(member) && (
+        <button
+          onClick={() => onDelete(member)}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 md:py-1.5 rounded-lg text-danger-600 bg-danger-50 hover:bg-danger-100 transition-colors"
+        >
+          <Trash2 size={13} />
+          Eliminar
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function StaffTable({
   members,
   loading,
@@ -79,56 +66,72 @@ export default function StaffTable({
   onToggleStatus,
   onDelete,
 }) {
-  const colSpan = showInstitution ? 5 : 4;
+  const actions = { onEdit, onToggleStatus, onDelete };
+
+  const columns = [
+    {
+      key: "name",
+      header: "Nombre completo",
+      className: "font-medium text-ink-900",
+      cell: fullName,
+    },
+    {
+      key: "email",
+      header: "Correo",
+      className: "text-ink-500",
+      cell: (member) => member.email,
+    },
+    ...(showInstitution
+      ? [
+          {
+            key: "institution",
+            header: "Institución",
+            className: "text-ink-500",
+            cell: (member) => member.institution_name,
+          },
+        ]
+      : []),
+    {
+      key: "status",
+      header: "Estado",
+      cell: (member) => <StatusBadge member={member} />,
+    },
+    {
+      key: "actions",
+      header: "Acción",
+      align: "right",
+      cell: (member) => (
+        <StaffActions member={member} align="end" {...actions} />
+      ),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-ink-500 border-b border-ink-100">
-            <th className="px-5 py-3 font-medium">Nombre completo</th>
-            <th className="px-5 py-3 font-medium">Correo</th>
-            {showInstitution && (
-              <th className="px-5 py-3 font-medium">Institución</th>
-            )}
-            <th className="px-5 py-3 font-medium">Estado</th>
-            <th className="px-5 py-3 font-medium text-right">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading && (
-            <tr>
-              <td
-                colSpan={colSpan}
-                className="px-5 py-8 text-center text-ink-300"
-              >
-                Cargando...
-              </td>
-            </tr>
-          )}
-          {!loading &&
-            members.map((member) => (
-              <StaffRow
-                key={member.id}
-                member={member}
-                showInstitution={showInstitution}
-                onEdit={onEdit}
-                onToggleStatus={onToggleStatus}
-                onDelete={onDelete}
-              />
-            ))}
-          {!loading && members.length === 0 && (
-            <tr>
-              <td
-                colSpan={colSpan}
-                className="px-5 py-8 text-center text-ink-300"
-              >
-                No hay usuarios registrados en este alcance.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      columns={columns}
+      rows={members}
+      rowKey={(member) => member.id}
+      loading={loading}
+      emptyText="No hay usuarios registrados en este alcance."
+      renderCard={(member) => (
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-ink-900 truncate">
+                {fullName(member)}
+              </p>
+              <p className="text-sm text-ink-500 truncate">{member.email}</p>
+              {showInstitution && (
+                <p className="text-xs text-ink-400 truncate">
+                  {member.institution_name}
+                </p>
+              )}
+            </div>
+            <StatusBadge member={member} />
+          </div>
+          <StaffActions member={member} {...actions} />
+        </div>
+      )}
+    />
   );
 }

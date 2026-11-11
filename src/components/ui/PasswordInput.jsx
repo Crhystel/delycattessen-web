@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const baseInput =
-  "w-full rounded-xl border border-ink-100 px-3.5 py-2.5 pr-10 text-sm text-ink-900 placeholder:text-ink-300 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition";
+  "w-full rounded-xl border border-ink-100 px-3.5 py-2.5 pr-10 text-base sm:text-sm text-ink-900 placeholder:text-ink-300 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition";
 
 export default function PasswordInput({
   value,

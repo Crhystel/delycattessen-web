@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Upload } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
+import FormGrid from "../../../components/ui/FormGrid";
+import ImageUploadField from "../../../components/ui/ImageUploadField";
 import { Field, Input, Select, Textarea } from "../../../components/ui/Field";
 import { useToast } from "../../../context/ToastContext";
 import { isImageSource } from "../../../lib/images";
@@ -125,7 +126,7 @@ export default function ProductFormModal({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col gap-1 sm:items-end">
             {selection.pending.length > 0 && (
               <p className="text-xs text-danger-600">
                 Falta confirmar alérgenos de:{" "}
@@ -143,7 +144,7 @@ export default function ProductFormModal({
       }
     >
       <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-2 gap-4">
+        <FormGrid cols={2}>
           <Field label="Nombre del producto">
             <Input
               value={form.name}
@@ -189,41 +190,21 @@ export default function ProductFormModal({
               <p className="text-xs text-danger-600 mt-1.5">{errors.stock}</p>
             )}
           </Field>
-        </div>
+        </FormGrid>
 
         <Field label="Imagen del producto">
-          <div className="flex items-center gap-3">
-            {isImageSource(form.image) ? (
-              <button
-                type="button"
-                onClick={() =>
-                  onPreviewImage({
-                    url: form.image,
-                    name: form.name || "Vista previa",
-                  })
-                }
-                className="shrink-0"
-              >
-                <img
-                  src={form.image}
-                  alt=""
-                  className="w-24 h-[72px] rounded-lg object-cover border border-ink-100 cursor-zoom-in hover:opacity-80 transition-opacity"
-                />
-              </button>
-            ) : (
-              <span className="text-3xl">🍴</span>
-            )}
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
-              <Upload size={15} />
-              Subir imagen
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageFile}
-              />
-            </label>
-          </div>
+          <ImageUploadField
+            image={isImageSource(form.image) ? form.image : null}
+            onFile={handleImageFile}
+            previewClassName="w-24 h-[72px]"
+            onPreview={() =>
+              onPreviewImage({
+                url: form.image,
+                name: form.name || "Vista previa",
+              })
+            }
+            fallback={<span className="text-3xl">🍴</span>}
+          />
         </Field>
 
         <Field label="Descripción">

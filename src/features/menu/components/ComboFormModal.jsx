@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Upload, Minus, Plus, Package, UtensilsCrossed } from "lucide-react";
+import { Minus, Plus, Package, UtensilsCrossed } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
+import FormGrid from "../../../components/ui/FormGrid";
+import ImageUploadField from "../../../components/ui/ImageUploadField";
 import { Field, Input } from "../../../components/ui/Field";
 import { isImageSource } from "../../../lib/images";
 import {
@@ -146,7 +148,7 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
               Inventario".
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
               {products.map((p) => (
                 <ProductQuantity
                   key={p.id}
@@ -163,35 +165,22 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
         </Field>
 
         <Field label="Imagen (banner en la app)">
-          <div className="flex items-center gap-3">
-            {form.image ? (
-              <img
-                src={form.image}
-                alt="Vista previa"
-                className="w-20 h-12 rounded-lg object-cover border border-ink-100"
-              />
-            ) : (
+          <ImageUploadField
+            image={form.image}
+            onFile={handleImageFile}
+            previewClassName="w-20 h-12"
+            fallback={
               <div className="w-20 h-12 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                 <Package size={20} />
               </div>
-            )}
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
-              <Upload size={15} />
-              Subir imagen
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageFile}
-              />
-            </label>
-          </div>
+            }
+          />
           {errors.image && (
             <p className="text-xs text-danger-600 mt-1.5">{errors.image}</p>
           )}
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <FormGrid cols={3}>
           <Field label="Precio del combo (USD)">
             <Input
               type="number"
@@ -216,7 +205,7 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
               onChange={(e) => updateField("endDate", e.target.value)}
             />
           </Field>
-        </div>
+        </FormGrid>
         {(errors.price || errors.endDate) && (
           <p className="text-xs text-danger-600 -mt-2 mb-3">
             {errors.price || errors.endDate}

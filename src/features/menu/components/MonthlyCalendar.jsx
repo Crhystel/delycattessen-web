@@ -48,15 +48,20 @@ export default function MonthlyCalendar({
               } ${selected ? "ring-2 ring-brand-500" : ""}`}
             >
               <span className="font-semibold">{info.day}</span>
+              {/* Phones: the cell color tells the status and a dot marks preorders;
+                  the counts need room, so they show from `sm`. */}
               {count > 0 && (
-                <span className="text-[9px]">
+                <span className="hidden sm:inline text-[10px]">
                   {count} plato{count > 1 ? "s" : ""}
                 </span>
               )}
               {dayPreorders > 0 && (
-                <span className="text-[9px] font-semibold text-brand-600">
-                  {dayPreorders} preórd.
-                </span>
+                <>
+                  <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-brand-500" />
+                  <span className="hidden sm:inline text-[10px] font-semibold text-brand-600">
+                    {dayPreorders} preórd.
+                  </span>
+                </>
               )}
             </button>
           );

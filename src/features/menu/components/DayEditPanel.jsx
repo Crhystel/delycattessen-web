@@ -24,7 +24,8 @@ export default function DayEditPanel({
         </div>
         <button
           onClick={onClose}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100 shrink-0"
+          aria-label="Cerrar"
+          className="w-10 h-10 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center text-ink-500 hover:bg-ink-100 shrink-0"
         >
           <XIcon size={16} />
         </button>
@@ -52,7 +53,7 @@ export default function DayEditPanel({
           Mensual" para poder asignarlo a este día.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {dishes.map((dish) => {
             const active = dayDishes.includes(dish.id);
             return (

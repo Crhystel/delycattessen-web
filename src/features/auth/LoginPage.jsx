@@ -130,7 +130,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setForgotPasswordOpen(true)}
-              className="text-xs front-medium text-teal-600 hover:text-teal-700"
+              className="text-xs font-medium text-teal-600 hover:text-teal-700"
             >
               ¿Olvidaste tu contraseña?
             </button>

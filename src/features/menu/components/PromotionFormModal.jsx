@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { Upload, RefreshCw, Tag } from "lucide-react";
+import { RefreshCw, Tag } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Modal from "../../../components/ui/Modal";
+import FormGrid from "../../../components/ui/FormGrid";
+import ImageUploadField from "../../../components/ui/ImageUploadField";
 import { Field, Input } from "../../../components/ui/Field";
 import { conflictingPromoFor } from "../../../lib/promoRules";
 import {
@@ -120,7 +122,7 @@ export default function PromotionFormModal({
               Inventario".
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
               {products.map((p) => (
                 <DiscountProductOption
                   key={p.id}
@@ -139,32 +141,18 @@ export default function PromotionFormModal({
         </Field>
 
         <Field label="Imagen del descuento">
-          <div className="flex items-center gap-3">
-            {form.image ? (
-              <img
-                src={form.image}
-                alt="Vista previa"
-                className="w-12 h-12 rounded-lg object-cover border border-ink-100"
-              />
-            ) : (
+          <ImageUploadField
+            image={form.image}
+            onFile={handleImageFile}
+            fallback={
               <div className="w-12 h-12 rounded-lg bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
                 <Tag size={20} />
               </div>
-            )}
-            <label className="flex items-center gap-2 text-sm font-medium text-ink-700 border border-ink-100 rounded-xl px-3 py-2 cursor-pointer hover:bg-ink-50">
-              <Upload size={15} />
-              Subir imagen
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageFile}
-              />
-            </label>
-          </div>
+            }
+          />
         </Field>
 
-        <div className="grid grid-cols-3 gap-4">
+        <FormGrid cols={3}>
           <Field label="Descuento (%)">
             <Input
               type="number"
@@ -190,7 +178,7 @@ export default function PromotionFormModal({
               onChange={(e) => updateField("endDate", e.target.value)}
             />
           </Field>
-        </div>
+        </FormGrid>
         {(errors.discount || errors.endDate) && (
           <p className="text-xs text-danger-600 -mt-2 mb-3">
             {errors.discount || errors.endDate}

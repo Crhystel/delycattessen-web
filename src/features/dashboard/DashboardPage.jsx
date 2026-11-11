@@ -3,6 +3,7 @@ import { MousePointerClick } from "lucide-react";
 import Topbar from "../../layouts/Topbar";
 import Card, { CardHeader } from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import PageContainer from "../../components/ui/PageContainer";
 import { useInstitution } from "../../context/InstitutionContext";
 import { useSalesDashboard } from "./hooks/useSalesDashboard";
 import {
@@ -46,7 +47,7 @@ export default function DashboardPage() {
         subtitle={`Ingresos, canales y productos de ${selectedInstitutionName} · se actualiza cada 30 s`}
       />
 
-      <main className="p-6 space-y-6">
+      <PageContainer spacing={6}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <PeriodSelector
             presetId={dashboard.presetId}
@@ -162,7 +163,7 @@ export default function DashboardPage() {
             />
           </Card>
         </div>
-      </main>
+      </PageContainer>
     </>
   );
 }
