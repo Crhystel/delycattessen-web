@@ -74,7 +74,7 @@ export default function CodeInput({ value, onChange, length = 6 }) {
           onChange={(e) => handleChange(e, i)}
           onKeyDown={(e) => handleKeyDown(e, i)}
           onPaste={(e) => handlePasteEvent(e, i)}
-          className="w-11 h-12 text-center text-lg font-semibold rounded-xl border border-ink-100 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
+          className="w-10 sm:w-11 h-12 text-center text-lg font-semibold rounded-xl border border-ink-100 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50"
         />
       ))}
     </div>

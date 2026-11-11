@@ -11,8 +11,8 @@ export default function Card({ children, className = '', padded = true, ...props
 
 export function CardHeader({ title, subtitle, action }) {
   return (
-    <div className="flex items-start justify-between gap-3 mb-4">
-      <div>
+    <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+      <div className="min-w-0">
         <h3 className="text-base font-semibold text-ink-900 font-display">{title}</h3>
         {subtitle && <p className="text-sm text-ink-500 mt-0.5">{subtitle}</p>}
       </div>

@@ -9,7 +9,7 @@ export function Field({ label, children, hint }) {
 }
 
 const baseInput =
-  'w-full rounded-xl border border-ink-100 px-3.5 py-2.5 text-sm text-ink-900 placeholder:text-ink-300 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition'
+  'w-full rounded-xl border border-ink-100 px-3.5 py-2.5 text-base sm:text-sm text-ink-900placeholder:text-ink-300 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-50 transition'
 
 export function Input(props) {
   return <input className={baseInput} {...props} />
