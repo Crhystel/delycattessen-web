@@ -16,6 +16,7 @@ export default function IngredientAllergenFields({
   return (
     <>
       <Field
+        as="div"
         label="Ingredientes (obligatorio)"
         hint="Busca en el catálogo o agrega uno nuevo. Cada ingrediente nuevo o sin confirmar deberá revisarse abajo antes de guardar."
       >
@@ -29,7 +30,7 @@ export default function IngredientAllergenFields({
       </Field>
 
       {selected.length > 0 && (
-        <Field label="Confirmación de alérgenos por ingrediente">
+        <Field as="div" label="Confirmación de alérgenos por ingrediente">
           <div className="space-y-3">
             {selected.map((ingredient) => (
               <IngredientAllergenReview

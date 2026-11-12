@@ -1,10 +1,12 @@
-export function Field({ label, children, hint }) {
+// `as="div"` for content with buttons (chips, toggles): a <label> forwards any
+// click inside it to its first button, which would fire it by accident.
+export function Field({ label, children, hint, as: Tag = 'label' }) {
   return (
-    <label className="block mb-4">
+    <Tag className="block mb-4">
       <span className="block text-sm font-medium text-ink-700 mb-1.5">{label}</span>
       {children}
       {hint && <span className="block text-xs text-ink-300 mt-1">{hint}</span>}
-    </label>
+    </Tag>
   )
 }
 
