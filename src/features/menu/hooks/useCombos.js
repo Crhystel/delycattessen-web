@@ -39,7 +39,7 @@ export function useCombos() {
           await createCombo(payload, selectedInstitution);
           toast.success(
             "Promoción creada",
-            "El combo se ofrecerá en caja durante su vigencia.",
+            "El combo se ofrecerá en caja durante su vigencia y se avisó a los padres por correo.",
           );
         }
         reload();
