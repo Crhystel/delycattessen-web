@@ -44,11 +44,20 @@ function ProductInfo({ product, onPreview }) {
 }
 
 function ProductActions({ product, onEdit, onDelete }) {
+  function handleDelete() {
+    if (
+      window.confirm(
+        `¿Eliminar el producto "${product.name}"? Dejará de ofrecerse en caja.`,
+      )
+    )
+      onDelete(product.id);
+  }
+
   return (
     <RowIconActions
       label="producto"
       onEdit={() => onEdit(product)}
-      onDelete={() => onDelete(product.id)}
+      onDelete={handleDelete}
     />
   );
 }

@@ -16,10 +16,12 @@ import {
   isStoredSessionIdle,
   SESSION_END_REASON,
 } from "../lib/idleSession";
+import { IsAdmin } from "../lib/permissions";
 import { tokenStore } from "../lib/tokenStore";
 import { useIdleLogout } from "../hooks/useIdleLogout";
 
 const AuthContext = createContext(null);
+const adminPermission = new IsAdmin();
 
 // Session rules: the stored session survives closing the tab and is erased by
 // logout() (the user signing out) or by the idle logout (no activity for
@@ -108,7 +110,21 @@ export function AuthProvider({ children }) {
     async (email, password) => {
       const data = await loginRequest(email, password);
       tokenStore.setTokens(data);
-      updateUser(await getMe());
+      const profile = await getMe();
+      // The API issues tokens to every role, but only admins use the web: a
+      // rejected login must not leave a stored session behind.
+      if (
+        !adminPermission.hasPermission({
+          isAuthenticated: true,
+          role: profile.role,
+        })
+      ) {
+        tokenStore.clear();
+        throw new Error(
+          "Esta cuenta no tiene acceso al panel de administración. Ingresa con una cuenta de administrador.",
+        );
+      }
+      updateUser(profile);
       setToken(data.access);
       setSessionExpired(false);
       return data;

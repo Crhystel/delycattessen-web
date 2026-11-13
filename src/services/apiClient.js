@@ -54,15 +54,25 @@ class ApiClient {
     if (data.detail) return data.detail;
     if (data.message) return data.message;
 
-    // DRF validation errors come as { field: ["msg1", "msg2"] } or
-    // { non_field_errors: ["msg"] } — surface the first one found.
-    const firstKey = Object.keys(data)[0];
-    if (firstKey && Array.isArray(data[firstKey])) {
-      return data[firstKey][0];
-    }
-
-    return "Ocurrió un error al conectar con el servidor.";
+    // DRF validation errors come as { field: ["msg"] }, { non_field_errors:
+    // ["msg"] } or nested ({ items: [{ product_id: ["msg"] }] }) — surface the
+    // first text found.
+    return (
+      firstMessage(data) ?? "Ocurrió un error al conectar con el servidor."
+    );
   }
+}
+
+// First string inside a (possibly nested) DRF error body, or null.
+function firstMessage(value) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") {
+    for (const inner of Object.values(value)) {
+      const message = firstMessage(inner);
+      if (message) return message;
+    }
+  }
+  return null;
 }
 
 // Overrides the error step. A 401 on a request that carried a token means the
