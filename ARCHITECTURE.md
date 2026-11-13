@@ -143,17 +143,17 @@ Las rutas `/admin/*` están protegidas por `ProtectedRoute` con la regla `IsAdmi
 | `InstitutionContext` | Lista de sedes y la sede seleccionada (`ALL_INSTITUTIONS` = vista consolidada) |
 | `ToastContext` | Avisos de éxito / error / advertencia |
 
-Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Router. Los combos (promociones) no son estado global: los carga el hook `features/menu/hooks/useCombos.js`. No hay descuentos por porcentaje: el catálogo muestra solo el precio normal del producto.
+Cada contexto es un solo archivo con su Provider y su hook (`useAuth()`, `useInstitution()`, `useToast()`). Orden de anidado en `App.jsx`: Toast → Auth → Institution → Router. Los combos (promociones) no son estado global: los carga el hook `features/menu/hooks/useCombos.js`. No hay descuentos por porcentaje: el catálogo muestra solo el precio normal del producto. Un producto que está en un combo vigente o futuro no se puede eliminar (el backend responde 409 y el toast nombra los combos); si un combo ya quedó con un producto borrado, el formulario lo muestra como "ya no está en el catálogo" con un botón para quitarlo.
 
 ## 8. Sesión y autenticación
 
-- Login con correo y contraseña; el backend devuelve un token de acceso (1 h) y uno de renovación (15 días).
+- Login con correo y contraseña; el backend devuelve un token de acceso (1 h) y uno de renovación (15 días). El backend entrega tokens a cualquier rol, pero el panel es solo para administradores: si la cuenta no es de admin, `AuthContext.login` la rechaza con el aviso "Esta cuenta no tiene acceso al panel de administración…" (se muestra en el formulario) y no deja ninguna sesión guardada.
 - La sesión se guarda en el navegador (`lib/tokenStore.js`), por lo que **el usuario sigue logueado aunque cierre la pestaña o la app, mientras no supere el límite de inactividad**.
 - **Cierre por inactividad (solo web):** si pasan `VITE_IDLE_TIMEOUT_MINUTES` minutos (60 por defecto) sin mouse, teclado, scroll ni toque, `hooks/useIdleLogout.js` cierra la sesión: borra token y perfil guardados y lleva al login con el aviso "Tu sesión se cerró por inactividad". La hora de la última actividad se guarda en `tokenStore`, así que una pestaña activa mantiene vivas a las demás, y al reabrir el navegador pasado el límite la sesión guardada se descarta. La app Flutter **no** tiene esta regla: allí la sesión dura hasta que el usuario cierra sesión o el refresh es rechazado.
 - Los componentes nunca manejan el token: `apiClient` lo agrega a cada petición.
 - Si el token de acceso vence (401), `apiClient` lo renueva solo y **reenvía la petición una vez**. El 401 ocurre antes de que el backend ejecute la acción, así que reenviar no duplica pagos ni cambios. Si hay varias peticiones simultáneas, comparten una sola renovación. Los errores de red o 5xx **no** se reenvían.
 - Si la renovación es rechazada, la app saca al usuario del panel y le pide iniciar sesión, **sin borrar** los datos guardados.
-- Token y perfil guardados se borran cuando el usuario pulsa "Cerrar sesión" o cuando se cumple el cierre por inactividad.
+- Token y perfil guardados se borran cuando el usuario pulsa "Cerrar sesión", cuando se cumple el cierre por inactividad o cuando un inicio de sesión es rechazado por no ser de administrador.
 
 ## 9. Patrones de diseño usados
 

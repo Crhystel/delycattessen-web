@@ -56,6 +56,19 @@ export function comboAvailableUnits(items, products) {
   return Math.min(...units);
 }
 
+// Items of the combo whose product is no longer in the catalog (it was deleted),
+// with the name the combo had saved. The form shows them so they can be removed:
+// the backend still accepts them on an existing combo but never as a new item.
+export function unavailableItems(items, products, originalItems = []) {
+  return items
+    .filter(({ productId }) => !products.some((p) => p.id === productId))
+    .map(({ productId, quantity }) => ({
+      productId,
+      quantity,
+      name: originalItems.find((o) => o.productId === productId)?.name,
+    }));
+}
+
 // Items without enough stock (or inactive). When editing, only new items or
 // ones with a higher quantity than before are checked, as the backend does
 // (`originalItems` = combo items before editing).

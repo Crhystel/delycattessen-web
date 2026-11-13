@@ -11,6 +11,7 @@ import {
   comboToForm,
   regularPrice,
   comboAvailableUnits,
+  unavailableItems,
   validateCombo,
   formToComboPayload,
 } from "../comboForm";
@@ -75,6 +76,7 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
 
   const normalPrice = regularPrice(form.items, products);
   const availableUnits = comboAvailableUnits(form.items, products);
+  const missingItems = unavailableItems(form.items, products, combo?.items);
   const quantityOf = (productId) =>
     form.items.find((item) => item.productId === productId)?.quantity ?? 0;
 
@@ -153,6 +155,30 @@ export default function ComboFormModal({ combo, products, onSave, onClose }) {
           label="Productos del combo"
           hint="Elige los productos y cuántas unidades de cada uno incluye."
         >
+          {missingItems.length > 0 && (
+            <div className="space-y-2 mb-2">
+              {missingItems.map((item) => (
+                <div
+                  key={item.productId}
+                  className="flex items-center justify-between gap-2 rounded-xl bg-danger-50 px-3 py-2 text-sm"
+                >
+                  <span className="min-w-0 text-ink-700">
+                    <span className="font-medium text-ink-900">
+                      {item.name ?? "Un producto"}
+                    </span>{" "}
+                    · ya no está en el catálogo
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(item.productId, 0)}
+                    className="shrink-0 text-xs font-semibold text-danger-600 hover:underline"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {products.length === 0 ? (
             <p className="text-xs text-ink-400 text-center py-4">
               No hay productos en el catálogo. Créalos en "Catálogo e
