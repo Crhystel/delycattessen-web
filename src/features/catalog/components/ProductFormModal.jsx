@@ -8,7 +8,15 @@ import { useToast } from "../../../context/ToastContext";
 import { isImageSource } from "../../../lib/images";
 import IngredientAllergenFields from "./IngredientAllergenFields";
 
-const CATEGORIES = ["Bar", "Almuerzo", "Snacks", "Bebidas", "Postres"];
+const CATEGORIES = ["Bar", "Snacks", "Bebidas", "Postres"];
+
+// A product saved before a category was retired keeps it: the select must still
+// show it, or editing the product would silently switch its category.
+function categoryOptions(current) {
+  return current && !CATEGORIES.includes(current)
+    ? [...CATEGORIES, current]
+    : CATEGORIES;
+}
 
 const EMPTY_PRODUCT_FORM = {
   name: "",
@@ -160,7 +168,7 @@ export default function ProductFormModal({
               value={form.category}
               onChange={(e) => updateField("category", e.target.value)}
             >
-              {CATEGORIES.map((c) => (
+              {categoryOptions(form.category).map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
